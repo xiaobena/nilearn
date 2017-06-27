@@ -106,8 +106,9 @@ good extracted maps.
 
 .. topic:: **References**
 
-   * Arthur Mensch et al. `Compressed online dictionary learning for fast resting-state fMRI decomposition <https://hal.archives-ouvertes.fr/hal-01271033/>`_,
-     ISBI 2016, Lecture Notes in Computer Science
+   * Gael Varoquaux et al. `Multi-subject dictionary learning to segment an atlas of brain spontaneous activity <http://hal.inria.fr/inria-00588898/en/>`_,
+     IPMI 2011, pp. 562-573, Lecture
+     Notes in Computer Science
 
 Applying DictLearning
 ---------------------

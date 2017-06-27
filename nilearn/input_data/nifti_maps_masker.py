@@ -7,9 +7,9 @@ from sklearn.externals.joblib import Memory
 
 from .. import _utils
 from .._utils import logger, CacheMixin
+from .._utils.niimg import _get_data_dtype
 from .._utils.class_inspect import get_params
 from .._utils.niimg_conversions import _check_same_fov
-from .._utils.compat import get_affine
 from .. import image
 from .base_masker import filter_and_extract, BaseMasker
 
@@ -37,18 +37,15 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
     extracted (contrarily to NiftiLabelsMasker). Use case: Summarize brain
     signals from large-scale networks obtained by prior PCA or ICA.
 
-    Note that, Inf or NaN present in the given input images are automatically
-    put to zero rather than considered as missing data.
-
     Parameters
     ----------
     maps_img: 4D niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Set of continuous maps. One representative time course per map is
         extracted using least square regression.
 
     mask_img: 3D niimg-like object, optional
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Mask to apply to regions before extracting signals.
 
     allow_overlap: boolean, optional
@@ -79,12 +76,12 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
         This parameter is passed to signal.clean. Please see the related
         documentation for details
 
-    resampling_target: {"mask", "maps", "data", None} optional.
+    resampling_target: {"mask", "maps", None} optional.
         Gives which image gives the final shape/size. For example, if
         `resampling_target` is "mask" then maps_img and images provided to
         fit() are resampled to the shape and affine of mask_img. "None" means
         no resampling: if shapes and affines do not match, a ValueError is
-        raised. Default value: "data".
+        raised. Default value: "maps".
 
     memory: joblib.Memory or str, optional
         Used to cache the region extraction process.
@@ -100,9 +97,9 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
 
     Notes
     -----
-    If resampling_target is set to "maps", every 3D image processed by
+    With the default value for resampling_target, every 3D image processed by
     transform() will be resampled to the shape of maps_img. It may lead to a
-    very large memory consumption if the voxel number in maps_img is large.
+    very large memory consumption if the voxel number in labels_img is large.
 
     See also
     --------
@@ -163,9 +160,6 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
                    verbose=self.verbose)
 
         self.maps_img_ = _utils.check_niimg_4d(self.maps_img)
-        self.maps_img_ = image.clean_img(self.maps_img_, detrend=False,
-                                         standardize=False,
-                                         ensure_finite=True)
 
         if self.mask_img is not None:
             logger.log("loading mask from %s" %
@@ -185,7 +179,7 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
                 print("Resampling maps")
             self.maps_img_ = image.resample_img(
                 self.maps_img_,
-                target_affine=get_affine(self.mask_img_),
+                target_affine=self.mask_img_.get_affine(),
                 target_shape=self.mask_img_.shape,
                 interpolation="continuous",
                 copy=True)
@@ -195,7 +189,7 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
                 print("Resampling mask")
             self.mask_img_ = image.resample_img(
                 self.mask_img_,
-                target_affine=get_affine(self.maps_img_),
+                target_affine=self.maps_img_.get_affine(),
                 target_shape=self.maps_img_.shape[:3],
                 interpolation="nearest",
                 copy=True)
@@ -219,7 +213,7 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
         Parameters
         ----------
         imgs: 3D/4D Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             Images to process. It must boil down to a 4D image with scans
             number as last dimension.
 
@@ -266,7 +260,7 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
                 self._resampled_maps_img_ = self._cache(image.resample_img)(
                         self.maps_img_, interpolation="continuous",
                         target_shape=ref_img.shape[:3],
-                        target_affine=get_affine(ref_img))
+                        target_affine=ref_img.get_affine())
 
             if (self.mask_img_ is not None and
                     not _check_same_fov(ref_img, self.mask_img_)):
@@ -275,14 +269,14 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
                 self._resampled_mask_img_ = self._cache(image.resample_img)(
                         self.mask_img_, interpolation="nearest",
                         target_shape=ref_img.shape[:3],
-                        target_affine=get_affine(ref_img))
+                        target_affine=ref_img.get_affine())
 
         if not self.allow_overlap:
             # Check if there is an overlap.
 
             # If float, we set low values to 0
+            dtype = _get_data_dtype(self._resampled_maps_img_)
             data = self._resampled_maps_img_.get_data()
-            dtype = data.dtype
             if dtype.kind == 'f':
                 data[data < np.finfo(dtype).eps] = 0.
 
@@ -298,7 +292,7 @@ class NiftiMapsMasker(BaseMasker, CacheMixin):
         target_affine = None
         if self.resampling_target != 'data':
             target_shape = self._resampled_maps_img_.shape[:3]
-            target_affine = get_affine(self._resampled_maps_img_)
+            target_affine = self._resampled_maps_img_.get_affine()
 
         params = get_params(NiftiMapsMasker, self,
                             ignore=['resampling_target'])

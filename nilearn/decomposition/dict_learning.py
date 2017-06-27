@@ -132,11 +132,11 @@ class DictLearning(BaseDecomposition, TransformerMixin):
 
     References
     ----------
-    * Arthur Mensch, Gael Varoquaux, Bertrand Thirion,
-      Compressed online dictionary learning for fast resting-state fMRI
-      decomposition.
-      IEEE 13th International Symposium on Biomedical Imaging (ISBI), 2016.
-      pp. 1282-1285
+    * Gael Varoquaux et al.
+      Multi-subject dictionary learning to segment an atlas of brain
+      spontaneous activity
+      Information Processing in Medical Imaging, 2011, pp. 562-573,
+      Lecture Notes in Computer Science
     """
 
     def __init__(self, n_components=20,
@@ -198,7 +198,7 @@ class DictLearning(BaseDecomposition, TransformerMixin):
         Parameters
         ----------
         imgs: list of Niimg-like objects
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             Data on which PCA must be calculated. If this is a list,
             the affine is considered the same for all.
 

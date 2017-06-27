@@ -196,11 +196,11 @@ class SearchLight(BaseEstimator):
     Parameters
     -----------
     mask_img : Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         boolean image giving location of voxels containing usable signals.
 
     process_mask_img : Niimg-like object, optional
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         boolean image giving voxels on which searchlight should be
         computed.
 
@@ -266,7 +266,7 @@ class SearchLight(BaseEstimator):
         Parameters
         ----------
         imgs : Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             4D image.
 
         y : 1D array-like
@@ -291,7 +291,7 @@ class SearchLight(BaseEstimator):
 
         X, A = _apply_mask_and_get_affinity(
             process_mask_coords, imgs, self.radius, True,
-            mask_img=self.mask_img)
+            mask_img=self.process_mask_img)
 
         estimator = self.estimator
         if isinstance(estimator, _basestring):

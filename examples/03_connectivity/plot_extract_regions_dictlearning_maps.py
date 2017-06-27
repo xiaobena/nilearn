@@ -18,10 +18,8 @@ for more details.
 """
 
 ################################################################################
-# Fetch ADHD resting state functional datasets
-# ---------------------------------------------
-#
-# We use nilearn's datasets downloading utilities
+# Fetching ADHD resting state functional datasets by loading from datasets
+# utilities
 from nilearn import datasets
 
 adhd_dataset = datasets.fetch_adhd(n_subjects=20)
@@ -29,8 +27,7 @@ func_filenames = adhd_dataset.func
 confounds = adhd_dataset.confounds
 
 ################################################################################
-# Extract resting-state networks with DictionaryLearning
-# -------------------------------------------------------
+# Extracting resting-state networks with DictionaryLearning
 
 # Import dictionary learning algorithm from decomposition module and call the
 # object and fit the model to the functional datasets
@@ -53,8 +50,7 @@ plotting.plot_prob_atlas(components_img, view_type='filled_contours',
                          title='Dictionary Learning maps')
 
 ################################################################################
-# Extract regions from networks
-# ------------------------------
+# Extracting regions from networks
 
 # Import Region Extractor algorithm from regions module
 # threshold=0.5 indicates that we keep nominal of amount nonzero voxels across all
@@ -82,8 +78,7 @@ plotting.plot_prob_atlas(regions_extracted_img, view_type='filled_contours',
                          title=title)
 
 ################################################################################
-# Compute correlation coefficients
-# ---------------------------------
+# Computing correlation coefficients and plotting a connectome
 
 # First we need to do subjects timeseries signals extraction and then estimating
 # correlation matrices on those signals.
@@ -105,13 +100,12 @@ for filename, confound in zip(func_filenames, confounds):
 
 # Mean of all correlations
 import numpy as np
+
 mean_correlations = np.mean(correlations, axis=0).reshape(n_regions_extracted,
                                                           n_regions_extracted)
 
-###############################################################################
-# Plot resulting connectomes
-# ----------------------------
-# General imports needed for plotting
+# Visualization
+# Plotting connectome results
 import matplotlib.pyplot as plt
 from nilearn import image
 
@@ -127,16 +121,14 @@ plotting.plot_connectome(mean_correlations, coords_connectome,
                          edge_threshold='90%', title=title)
 
 ################################################################################
-# Plot regions extracted for only one specific network
-# ----------------------------------------------------
+# Plotting regions extracted for only one specific network
 
 # First, we plot a network of index=4 without region extraction (left plot)
 img = image.index_img(components_img, 4)
 coords = plotting.find_xyz_cut_coords(img)
-display = plotting.plot_stat_map(img, cut_coords=coords, colorbar=False,
-                                 title='Showing one specific network')
+display = plotting.plot_stat_map(img, cut_coords=coords,
+                                 colorbar=False, title='Showing one specific network')
 
-################################################################################
 # Now, we plot (right side) same network after region extraction to show that
 # connected regions are nicely seperated.
 # Each brain extracted region is identified as separate color.
@@ -146,11 +138,16 @@ display = plotting.plot_stat_map(img, cut_coords=coords, colorbar=False,
 regions_indices_of_map3 = np.where(np.array(regions_index) == 4)
 
 display = plotting.plot_anat(cut_coords=coords,
-                             title='Regions from this network')
+                             title='Extracted regions in one specific network')
 
-# Add as an overlay all the regions of index 4
-colors = 'rgbcmyk'
-for each_index_of_map3, color in zip(regions_indices_of_map3[0], colors):
+# Now add as an overlay by looping over all the regions of index 4
+# color list is random (you can choose your own color)
+color_list = [[0., 1., 0.29, 1.], [0., 1., 0.54, 1.],
+              [0., 1., 0.78, 1.], [0., 0.96, 1., 1.],
+              [0., 0.73, 1., 1.], [0., 0.47, 1., 1.],
+              [0., 0.22, 1., 1.], [0.01, 0., 1., 1.],
+              [0.26, 0., 1., 1.]]
+for each_index_of_map3, color in zip(regions_indices_of_map3[0], color_list):
     display.add_overlay(image.index_img(regions_extracted_img, each_index_of_map3),
                         cmap=plotting.cm.alpha_cmap(color))
 

@@ -1,6 +1,3 @@
-Nilearn usage examples
-======================
-
 .. warning::
 
     If you want to run the examples, make sure you execute them in a directory

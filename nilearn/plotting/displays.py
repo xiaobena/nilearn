@@ -7,22 +7,23 @@ the data with different layout of cuts.
 
 import collections
 import numbers
-from distutils.version import LooseVersion
 
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import cm as mpl_cm
-from matplotlib import lines
-from matplotlib import transforms, colors
-from matplotlib.colorbar import ColorbarBase
 from scipy import sparse, stats
 
-from . import glass_brain, cm
-from .edge_detect import _edge_map
-from .find_cuts import find_xyz_cut_coords, find_cut_slices
-from .. import _utils
 from ..image import new_img_like
+from .. import _utils
+
+import matplotlib.pyplot as plt
+from matplotlib import transforms, colors
+from matplotlib.colorbar import ColorbarBase
+from matplotlib import cm as mpl_cm
+from matplotlib import lines
+
+# Local imports
+from . import glass_brain, cm
+from .find_cuts import find_xyz_cut_coords, find_cut_slices
+from .edge_detect import _edge_map
 from ..image.resampling import (get_bounds, reorder_img, coord_transform,
                                 get_mask_bounds)
 
@@ -66,7 +67,13 @@ class BaseAxes(object):
         new_object_bounds = self.get_object_bounds()
 
         if new_object_bounds != old_object_bounds:
+            # The bounds of the object do not take into account a possible
+            # inversion of the axis. As such, we check if the axis was inverted
+            # before resetting the bounds and re-invert it after if needed.
+            inverted = self.ax.get_xlim()[0] > self.ax.get_xlim()[1]
             self.ax.axis(self.get_object_bounds())
+            if inverted:
+                self.ax.invert_xaxis()
 
     def draw_2d(self, data_2d, data_bounds, bounding_box,
                 type='imshow', **kwargs):
@@ -93,12 +100,6 @@ class BaseAxes(object):
                                **kwargs)
 
         self.add_object_bounds((xmin_, xmax_, zmin_, zmax_))
-
-        # The bounds of the object do not take into account a possible
-        # inversion of the axis. As such, we check that the axis is properly
-        # inverted when direction is left
-        if self.direction == 'l' and not (ax.get_xlim()[0] > ax.get_xlim()[1]):
-            ax.invert_xaxis()
 
         return im
 
@@ -365,7 +366,7 @@ class GlassBrainAxes(BaseAxes):
                 )
         elif vmax is None:
             if vmin < 0:
-                vmax = -vmin
+                vmin = -vmax
             else:
                 raise ValueError(
                     "If vmin is set to a non-negative number "
@@ -563,7 +564,7 @@ class BaseSlicer(object):
         Parameters
         -----------
         img: Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             If it is a masked array, only the non-masked part will be
             plotted.
         threshold : a number, None
@@ -595,43 +596,34 @@ class BaseSlicer(object):
 
         plt.draw_if_interactive()
 
-    def add_contours(self, img, threshold=1e-6, filled=False, **kwargs):
+    def add_contours(self, img, filled=False, **kwargs):
         """ Contour a 3D map in all the views.
 
         Parameters
         -----------
         img: Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             Provides image to plot.
-        threshold: a number, None
-            If None is given, the maps are not thresholded.
-            If a number is given, it is used to threshold the maps,
-            values below the threshold (in absolute value) are plotted
-            as transparent.
         filled: boolean, optional
             If filled=True, contours are displayed with color fillings.
         kwargs:
             Extra keyword arguments are passed to contour, see the
-            documentation of pylab.contour and see pylab.contourf documentation
-            for arguments related to contours with fillings.
+            documentation of pylab.contour
             Useful, arguments are typical "levels", which is a
-            list of values to use for plotting a contour or contour
-            fillings (if filled=True), and
+            list of values to use for plotting a contour, and
             "colors", which is one color or a list of colors for
             these contours.
-            Note: if colors are not specified, default coloring choices
-            (from matplotlib) for contours and contour_fillings can be
-            different.
         """
         self._map_show(img, type='contour', **kwargs)
         if filled:
-            if 'levels' in kwargs:
-                levels = kwargs['levels']
-                if len(levels) <= 1:
-                    # contour fillings levels should be given as (lower, upper).
-                    levels.append(np.inf)
-
-            self._map_show(img, type='contourf', threshold=threshold, **kwargs)
+            colors = kwargs['colors']
+            levels = kwargs['levels']
+            if len(levels) <= 1:
+                # contour fillings levels should be given as (lower, upper).
+                levels.append(np.inf)
+            alpha = kwargs['alpha']
+            self._map_show(img, type='contourf', levels=levels, alpha=alpha,
+                           colors=colors[:3])
 
         plt.draw_if_interactive()
 
@@ -642,33 +634,23 @@ class BaseSlicer(object):
         threshold = float(threshold) if threshold is not None else None
 
         if threshold is not None:
-            data = _utils.niimg._safe_get_data(img, ensure_finite=True)
+            data = img.get_data()
             if threshold == 0:
                 data = np.ma.masked_equal(data, 0, copy=False)
             else:
                 data = np.ma.masked_inside(data, -threshold, threshold,
                                            copy=False)
-            img = new_img_like(img, data, _utils.compat.get_affine(img))
+            img = new_img_like(img, data, img.get_affine())
 
-        affine = _utils.compat.get_affine(img)
-        data = _utils.niimg._safe_get_data(img, ensure_finite=True)
+        affine = img.get_affine()
+        data = img.get_data()
         data_bounds = get_bounds(data.shape, affine)
         (xmin, xmax), (ymin, ymax), (zmin, zmax) = data_bounds
 
         xmin_, xmax_, ymin_, ymax_, zmin_, zmax_ = \
             xmin, xmax, ymin, ymax, zmin, zmax
 
-        # Compute tight bounds
-        if type in ('contour', 'contourf'):
-            # Define a pseudo threshold to have a tight bounding box
-            if 'levels' in kwargs:
-                thr = 0.9 * np.min(np.abs(kwargs['levels']))
-            else:
-                thr = 1e-6
-            not_mask = np.logical_or(data > thr, data < -thr)
-            xmin_, xmax_, ymin_, ymax_, zmin_, zmax_ = \
-                get_mask_bounds(new_img_like(img, not_mask, affine))
-        elif hasattr(data, 'mask') and isinstance(data.mask, np.ndarray):
+        if hasattr(data, 'mask') and isinstance(data.mask, np.ndarray):
             not_mask = np.logical_not(data.mask)
             xmin_, xmax_, ymin_, ymax_, zmin_, zmax_ = \
                 get_mask_bounds(new_img_like(img, not_mask, affine))
@@ -677,6 +659,9 @@ class BaseSlicer(object):
         for display_ax in self.axes.values():
             try:
                 data_2d = display_ax.transform_to_2d(data, affine)
+                # To obtain the brain left view, we simply invert the x axis
+                if display_ax.direction == 'l':
+                    display_ax.ax.invert_xaxis()
             except IndexError:
                 # We are cutting outside the indices of the data
                 data_2d = None
@@ -730,11 +715,7 @@ class BaseSlicer(object):
                          x_adjusted_width,
                          height - (self._colorbar_margin['top'] +
                                    self._colorbar_margin['bottom'])]
-        self._colorbar_ax = figure.add_axes(lt_wid_top_ht)
-        if LooseVersion(matplotlib.__version__) >= LooseVersion("1.6"):
-            self._colorbar_ax.set_facecolor('w')
-        else:
-            self._colorbar_ax.set_axis_bgcolor('w')
+        self._colorbar_ax = figure.add_axes(lt_wid_top_ht, axis_bgcolor='w')
 
         our_cmap = mpl_cm.get_cmap(cmap)
         # edge case where the data has a single value
@@ -753,8 +734,7 @@ class BaseSlicer(object):
         if norm.vmin == norm.vmax:  # len(np.unique(data)) == 1 ?
             return
         else:
-            our_cmap = colors.LinearSegmentedColormap.from_list(
-                'Custom cmap', cmaplist, our_cmap.N)
+            our_cmap = our_cmap.from_list('Custom cmap', cmaplist, our_cmap.N)
 
         self._cbar = ColorbarBase(
             self._colorbar_ax, ticks=ticks, norm=norm,
@@ -773,7 +753,7 @@ class BaseSlicer(object):
         Parameters
         ----------
         img: Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             The 3D map to be plotted.
             If it is a masked array, only the non-masked part will be plotted.
         color: matplotlib color: string or (r, g, b) value
@@ -781,9 +761,9 @@ class BaseSlicer(object):
         """
         img = reorder_img(img, resample='continuous')
         data = img.get_data()
-        affine = _utils.compat.get_affine(img)
+        affine = img.get_affine()
         single_color_cmap = colors.ListedColormap([color])
-        data_bounds = get_bounds(data.shape, _utils.compat.get_affine(img))
+        data_bounds = get_bounds(data.shape, img.get_affine())
 
         # For each ax, cut the data and plot it
         for display_ax in self.axes.values():
@@ -935,18 +915,14 @@ class OrthoSlicer(BaseSlicer):
             raise ValueError('The number cut_coords passed does not'
                              'match the display_mode')
         x0, y0, x1, y1 = self.rect
-        facecolor = 'k' if self._black_bg else 'w'
+        axisbg = 'k' if self._black_bg else 'w'
         # Create our axes:
         self.axes = dict()
         for index, direction in enumerate(self._cut_displayed):
             fh = self.frame_axes.get_figure()
             ax = fh.add_axes([0.3 * index * (x1 - x0) + x0, y0,
-                              .3 * (x1 - x0), y1 - y0], aspect='equal')
-            if LooseVersion(matplotlib.__version__) >= LooseVersion("1.6"):
-                ax.set_facecolor(facecolor)
-            else:
-                ax.set_axis_bgcolor(facecolor)
-
+                              .3 * (x1 - x0), y1 - y0],
+                             axisbg=axisbg, aspect='equal')
             ax.axis('off')
             coord = self.cut_coords[
                 sorted(self._cut_displayed).index(direction)]

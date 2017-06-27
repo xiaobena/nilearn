@@ -21,18 +21,11 @@ Alternatively, :func:`nilearn.plotting.plot_prob_atlas` allows to plot the maps 
 with less control over the plot (see below)
 
 """
-############################################################################
-# Fetching probabilistic atlas - MSDL atlas
-# -----------------------------------------
-from nilearn import datasets
+
+from nilearn import datasets, plotting, image
 
 atlas_data = datasets.fetch_atlas_msdl()
 atlas_filename = atlas_data.maps
-
-#############################################################################
-# Visualizing a probabilistic atlas with plot_stat_map and add_overlay object
-# ---------------------------------------------------------------------------
-from nilearn import plotting, image
 
 # First plot the map for the PCC: index 4 in the atlas
 display = plotting.plot_stat_map(image.index_img(atlas_filename, 4),

@@ -1,7 +1,8 @@
 """
 Test image pre-processing functions
 """
-from nose.tools import assert_true, assert_false, assert_equal, assert_raises
+from nose.tools import assert_true, assert_false, assert_equal
+from distutils.version import LooseVersion
 from nose import SkipTest
 
 import platform
@@ -11,18 +12,16 @@ from nibabel import Nifti1Image
 import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
 from nilearn._utils.testing import assert_raises_regex
-from nilearn._utils.exceptions import DimensionError
 
 from nilearn import signal
 from nilearn.image import image
 from nilearn.image import resampling
 from nilearn.image import concat_imgs
-from nilearn._utils import testing, niimg_conversions, compat
+from nilearn._utils import testing, niimg_conversions
 from nilearn.image import new_img_like
 from nilearn.image import threshold_img
 from nilearn.image import iter_img
 from nilearn.image import math_img
-from nilearn.image import largest_connected_component_img
 
 X64 = (platform.architecture()[0] == '64bit')
 
@@ -172,7 +171,7 @@ def test__crop_img_to():
     assert_true(cropped_img.shape == (2, 4, 3))
 
     # check that affine was adjusted correctly
-    assert_true((compat.get_affine(cropped_img)[:3, 3] == new_origin).all())
+    assert_true((cropped_img.get_affine()[:3, 3] == new_origin).all())
 
     # check that data was really not copied
     data[2:4, 1:5, 3:6] = 2
@@ -243,13 +242,13 @@ def test_mean_img():
         truth = np.mean(arrays, axis=0)
 
         mean_img = image.mean_img(imgs)
-        assert_array_equal(compat.get_affine(mean_img), affine)
+        assert_array_equal(mean_img.get_affine(), affine)
         assert_array_equal(mean_img.get_data(), truth)
 
         # Test with files
         with testing.write_tmp_imgs(*imgs) as imgs:
             mean_img = image.mean_img(imgs)
-            assert_array_equal(compat.get_affine(mean_img), affine)
+            assert_array_equal(mean_img.get_affine(), affine)
             if X64:
                 assert_array_equal(mean_img.get_data(), truth)
             else:
@@ -260,6 +259,7 @@ def test_mean_img():
                 assert_allclose(mean_img.get_data(), truth,
                                 rtol=np.finfo(truth.dtype).resolution,
                                 atol=0)
+
 
 
 def test_mean_img_resample():
@@ -277,9 +277,9 @@ def test_mean_img_resample():
                                               target_affine=target_affine)
     assert_array_equal(resampled_mean_image.get_data(),
                        mean_img_with_resampling.get_data())
-    assert_array_equal(compat.get_affine(resampled_mean_image),
-                       compat.get_affine(mean_img_with_resampling))
-    assert_array_equal(compat.get_affine(mean_img_with_resampling), target_affine)
+    assert_array_equal(resampled_mean_image.get_affine(),
+                       mean_img_with_resampling.get_affine())
+    assert_array_equal(mean_img_with_resampling.get_affine(), target_affine)
 
 
 def test_swap_img_hemispheres():
@@ -326,15 +326,15 @@ def test_index_img():
         expected_data_3d = img_4d.get_data()[..., i]
         assert_array_equal(this_img.get_data(),
                            expected_data_3d)
-        assert_array_equal(compat.get_affine(this_img),
-                           compat.get_affine(img_4d))
+        assert_array_equal(this_img.get_affine(),
+                           img_4d.get_affine())
 
     for i in [fourth_dim_size, - fourth_dim_size - 1,
               [0, fourth_dim_size],
               np.repeat(True, fourth_dim_size + 1)]:
         testing.assert_raises_regex(
             IndexError,
-            'out of bounds|invalid index|out of range|boolean index',
+            'out of bounds|invalid index|out of range',
             image.index_img, img_4d, i)
 
 
@@ -356,16 +356,16 @@ def test_iter_img():
         expected_data_3d = img_4d.get_data()[..., i]
         assert_array_equal(img.get_data(),
                            expected_data_3d)
-        assert_array_equal(compat.get_affine(img),
-                           compat.get_affine(img_4d))
+        assert_array_equal(img.get_affine(),
+                           img_4d.get_affine())
 
     with testing.write_tmp_imgs(img_4d) as img_4d_filename:
         for i, img in enumerate(image.iter_img(img_4d_filename)):
             expected_data_3d = img_4d.get_data()[..., i]
             assert_array_equal(img.get_data(),
                                expected_data_3d)
-            assert_array_equal(compat.get_affine(img),
-                               compat.get_affine(img_4d))
+            assert_array_equal(img.get_affine(),
+                               img_4d.get_affine())
         # enables to delete "img_4d_filename" on windows
         del img
 
@@ -374,16 +374,16 @@ def test_iter_img():
         expected_data_3d = img_4d.get_data()[..., i]
         assert_array_equal(img.get_data(),
                            expected_data_3d)
-        assert_array_equal(compat.get_affine(img),
-                           compat.get_affine(img_4d))
+        assert_array_equal(img.get_affine(),
+                           img_4d.get_affine())
 
     with testing.write_tmp_imgs(*img_3d_list) as img_3d_filenames:
         for i, img in enumerate(image.iter_img(img_3d_filenames)):
             expected_data_3d = img_4d.get_data()[..., i]
             assert_array_equal(img.get_data(),
                                expected_data_3d)
-            assert_array_equal(compat.get_affine(img),
-                               compat.get_affine(img_4d))
+            assert_array_equal(img.get_affine(),
+                               img_4d.get_affine())
         # enables to delete "img_3d_filename" on windows
         del img
 
@@ -394,9 +394,13 @@ def test_new_img_like_mgz():
     when using plot_stap_map
     """
 
+    if not LooseVersion(nibabel.__version__) >= LooseVersion('1.2.0'):
+        # Old nibabel do not support MGZ files
+        raise SkipTest
+
     ref_img = nibabel.load(os.path.join(datadir, 'test.mgz'))
     data = np.ones(ref_img.get_data().shape, dtype=np.bool)
-    affine = compat.get_affine(ref_img)
+    affine = ref_img.get_affine()
     new_img_like(ref_img, data, affine, copy_header=False)
 
 
@@ -490,8 +494,8 @@ def test_math_img():
             result = math_img(formula, img1=imgs[0], img2=imgs[1])
             assert_array_equal(result.get_data(),
                                expected_result.get_data())
-            assert_array_equal(compat.get_affine(result),
-                               compat.get_affine(expected_result))
+            assert_array_equal(result.get_affine(),
+                               expected_result.get_affine())
             assert_equal(result.shape, expected_result.shape)
 
 
@@ -510,73 +514,3 @@ def test_clean_img():
 
     np.testing.assert_almost_equal(data_img_.get_data().T.reshape(100, -1),
                                    data_flat_)
-    # if NANs
-    data[:, 9, 9] = np.nan
-    # if infinity
-    data[:, 5, 5] = np.inf
-    nan_img = nibabel.Nifti1Image(data, np.eye(4))
-    clean_im = image.clean_img(nan_img, ensure_finite=True)
-    assert_true(np.any(np.isfinite(clean_im.get_data())), True)
-
-
-def test_largest_cc_img():
-    """ Check the extraction of the largest connected component, for niftis
-
-    Similiar to smooth_img tests for largest connected_component_img, here also
-    only the added features for largest_connected_component are tested.
-    """
-
-    # Test whether dimension of 3Dimg and list of 3Dimgs are kept.
-    shapes = ((10, 11, 12), (13, 14, 15))
-    regions = [1, 3]
-
-    img1 = testing.generate_labeled_regions(shape=shapes[0],
-                                            n_regions=regions[0])
-    img2 = testing.generate_labeled_regions(shape=shapes[1],
-                                            n_regions=regions[1])
-
-    for create_files in (False, True):
-        with testing.write_tmp_imgs(img1, img2,
-                                    create_files=create_files) as imgs:
-            # List of images as input
-            out = largest_connected_component_img(imgs)
-            assert_true(isinstance(out, list))
-            assert_true(len(out) == 2)
-            for o, s in zip(out, shapes):
-                assert_true(o.shape == (s))
-
-            # Single image as input
-            out = largest_connected_component_img(imgs[0])
-            assert_true(isinstance(out, Nifti1Image))
-            assert_true(out.shape == (shapes[0]))
-
-        # Test whether 4D Nifti throws the right error.
-        img_4D = testing.generate_fake_fmri(shapes[0], length=17)
-        assert_raises(DimensionError, largest_connected_component_img, img_4D)
-
-    # tests adapted to non-native endian data dtype
-    img1_change_dtype = nibabel.Nifti1Image(img1.get_data().astype('>f8'),
-                                            affine=img1.get_affine())
-    img2_change_dtype = nibabel.Nifti1Image(img2.get_data().astype('>f8'),
-                                            affine=img2.get_affine())
-
-    for create_files in (False, True):
-        with testing.write_tmp_imgs(img1_change_dtype, img2_change_dtype,
-                                    create_files=create_files) as imgs:
-            # List of images as input
-            out = largest_connected_component_img(imgs)
-            assert_true(isinstance(out, list))
-            assert_true(len(out) == 2)
-            for o, s in zip(out, shapes):
-                assert_true(o.shape == (s))
-
-            # Single image as input
-            out = largest_connected_component_img(imgs[0])
-            assert_true(isinstance(out, Nifti1Image))
-            assert_true(out.shape == (shapes[0]))
-
-    # Test the output with native and without native
-    out_native = largest_connected_component_img(img1)
-
-    out_non_native = largest_connected_component_img(img1_change_dtype)
-    np.testing.assert_equal(out_native.get_data(), out_non_native.get_data())

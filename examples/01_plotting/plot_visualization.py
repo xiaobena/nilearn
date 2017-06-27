@@ -7,11 +7,9 @@ Simple example to show Nifti data visualization.
 
 ##############################################################################
 # Fetch data
-# ----------
 from nilearn import datasets
 
-# By default 2nd subject will be fetched
-haxby_dataset = datasets.fetch_haxby()
+haxby_dataset = datasets.fetch_haxby(n_subjects=1)
 
 # print basic information on the dataset
 print('First anatomical nifti image (3D) located is at: %s' %
@@ -21,7 +19,6 @@ print('First functional nifti image (4D) is located at: %s' %
 
 ##############################################################################
 # Visualization
-# -------------
 from nilearn.image.image import mean_img
 
 # Compute the mean EPI: we do the mean along the axis 3, which is time
@@ -33,7 +30,7 @@ plot_epi(mean_haxby)
 
 ##############################################################################
 # Extracting a brain mask
-# -----------------------
+
 # Simple computation of a mask from the fMRI data
 from nilearn.masking import compute_epi_mask
 mask_img = compute_epi_mask(func_filename)
@@ -44,7 +41,7 @@ plot_roi(mask_img, mean_haxby)
 
 ##############################################################################
 # Applying the mask to extract the corresponding time series
-# ----------------------------------------------------------
+
 from nilearn.masking import apply_mask
 masked_data = apply_mask(func_filename, mask_img)
 

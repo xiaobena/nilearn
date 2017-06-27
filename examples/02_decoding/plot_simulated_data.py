@@ -6,26 +6,6 @@ Example of pattern recognition on simulated data
 This example simulates data according to a very simple sketch of brain
 imaging data and applies machine learning techniques to predict output
 values.
-
-We use a very simple generating function to simulate data, as in `Michel
-et al. 2012 <http://dx.doi.org/10.1109/TMI.2011.2113378>`_ , a linear
-model with a random design matrix **X**:
-
-.. math::
-
-   \mathbf{y} = \mathbf{X} \mathbf{w} + \mathbf{e}
-
-* **w**: the weights of the linear model correspond to the predictive
-  brain regions. Here, in the simulations, they form a 3D image with 5, four
-  of which in opposite corners and one in the middle, as plotted below.
-
-* **X**: the design matrix corresponds to the observed fMRI data. Here
-  we simulate random normal variables and smooth them as in Gaussian
-  fields.
-
-* **e** is random normal noise.
-
-
 """
 
 # Licence : BSD
@@ -49,9 +29,8 @@ from nilearn import decoding
 import nilearn.masking
 
 
-##############################################################################
-# A function to generate data
-##############################################################################
+###############################################################################
+# Function to generate data
 def create_simulation_data(snr=0, n_samples=2 * 100, size=12, random_state=1):
     generator = check_random_state(random_state)
     roi_size = 2  # size / 3
@@ -91,12 +70,9 @@ def create_simulation_data(snr=0, n_samples=2 * 100, size=12, random_state=1):
     y_test = y[n_samples // 2:]
     y = y[:n_samples // 2]
 
-    return X_train, X_test, y, y_test, snr, w, size
+    return X_train, X_test, y, y_test, snr, noise, w, size
 
 
-##############################################################################
-# A simple function to plot slices
-##############################################################################
 def plot_slices(data, title=None):
     plt.figure(figsize=(5.5, 2.2))
     vmax = np.abs(data).max()
@@ -113,8 +89,7 @@ def plot_slices(data, title=None):
 
 ###############################################################################
 # Create data
-###############################################################################
-X_train, X_test, y_train, y_test, snr, coefs, size = \
+X_train, X_test, y_train, y_test, snr, _, coefs, size = \
     create_simulation_data(snr=-10, n_samples=100, size=12)
 
 # Create masks for SearchLight. process_mask is the voxels where SearchLight
@@ -132,28 +107,8 @@ coefs = np.reshape(coefs, [size, size, size])
 plot_slices(coefs, title="Ground truth")
 
 ###############################################################################
-# Run different estimators
-###############################################################################
-#
-# We can now run different estimators and look at their prediction score,
-# as well as the feature maps that they recover. Namely, we will use
-#
-# * A support vector regression (`SVM
-#   <http://scikit-learn.org/stable/modules/svm.html>`_)
-#
-# * An `elastic-net
-#   <http://scikit-learn.org/stable/modules/linear_model.html#elastic-net>`_
-#
-# * A *Bayesian* ridge estimator, i.e. a ridge estimator that sets its
-#   parameter according to a metaprior
-#
-# * A ridge estimator that set its parameter by cross-validation
-#
-# Note that the `RidgeCV` and the `ElasticNetCV` have names ending in `CV`
-# that stands for `cross-validation`: in the list of possible `alpha`
-# values that they are given, they choose the best by cross-validation.
-
-estimators = [
+# Compute the results and estimated coef maps for different estimators
+classifiers = [
     ('bayesian_ridge', linear_model.BayesianRidge(normalize=True)),
     ('enet_cv', linear_model.ElasticNetCV(alphas=[5, 1, 0.5, 0.1],
                                           l1_ratio=0.05)),
@@ -166,36 +121,29 @@ estimators = [
         verbose=1, n_jobs=1))
 ]
 
-###############################################################################
 # Run the estimators
-#
-# As the estimators expose a fairly consistent API, we can all fit them in
-# a for loop: they all have a `fit` method for fitting the data, a `score`
-# method to retrieve the prediction score, and because they are all linear
-# models, a `coef_` attribute that stores the coefficients **w** estimated
-
-for name, estimator in estimators:
+for name, classifier in classifiers:
     t1 = time()
     if name != "searchlight":
-        estimator.fit(X_train, y_train)
+        classifier.fit(X_train, y_train)
     else:
         X = nilearn.masking.unmask(X_train, mask_img)
-        estimator.fit(X, y_train)
+        classifier.fit(X, y_train)
         del X
     elapsed_time = time() - t1
 
     if name != 'searchlight':
-        coefs = estimator.coef_
+        coefs = classifier.coef_
         coefs = np.reshape(coefs, [size, size, size])
-        score = estimator.score(X_test, y_test)
+        score = classifier.score(X_test, y_test)
         title = '%s: prediction score %.3f, training time: %.2fs' % (
-                estimator.__class__.__name__, score,
+                classifier.__class__.__name__, score,
                 elapsed_time)
 
     else:  # Searchlight
-        coefs = estimator.scores_
+        coefs = classifier.scores_
         title = '%s: training time: %.2fs' % (
-                estimator.__class__.__name__,
+                classifier.__class__.__name__,
                 elapsed_time)
 
     # We use the plot_slices function provided in the example to
@@ -212,19 +160,3 @@ p_values[p_values > 10] = 10
 plot_slices(p_values, title="f_regress")
 
 plt.show()
-
-###############################################################################
-# An exercice to go further
-###############################################################################
-#
-# As an exercice, you can use recursive feature elimination (RFE) with
-# the SVM
-#
-# Read the object's documentation to find out how to use RFE.
-#
-# **Performance tip**: increase the `step` parameter, or it will be very
-# slow.
-
-from sklearn.feature_selection import RFE
-
-

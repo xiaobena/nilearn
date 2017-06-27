@@ -4,9 +4,7 @@
 import os
 import tempfile
 from functools import partial
-from distutils.version import LooseVersion
 
-import matplotlib
 import matplotlib.pyplot as plt
 import nibabel
 import numpy as np
@@ -57,8 +55,6 @@ def test_demo_plot_roi():
     demo_plot_roi()
     # Test the black background code path
     demo_plot_roi(black_bg=True)
-    # Test whether the function accepts a threshold argument
-    demo_plot_roi(threshold=0.2)
 
     # Save execution time and memory
     plt.close()
@@ -86,7 +82,7 @@ def test_plot_anat():
     finally:
         os.remove(filename)
 
-    ortho_slicer = plot_anat(img, dim='auto')
+    ortho_slicer = plot_anat(img, dim=True)
     filename = tempfile.mktemp(suffix='.png')
     try:
         ortho_slicer.savefig(filename)
@@ -885,61 +881,3 @@ def test_outlier_cut_coords():
 
     p = plot_stat_map(img, display_mode='z', cut_coords=cuts[-4:],
                       bg_img=bg_img)
-
-
-def test_plot_stat_map_with_nans():
-    img = _generate_img()
-    data = img.get_data()
-
-    data[6, 5, 1] = np.nan
-    data[1, 5, 2] = np.nan
-    data[1, 3, 2] = np.nan
-    data[6, 5, 2] = np.inf
-
-    img = nibabel.Nifti1Image(data, mni_affine)
-    plot_epi(img)
-    plot_stat_map(img)
-    plot_glass_brain(img)
-
-
-def test_plotting_functions_with_cmaps():
-    img = load_mni152_template()
-    # some cmaps such as 'viridis' (the new default in 2.0), 'magma', 'plasma',
-    # and 'inferno' are not supported for older matplotlib version from < 1.5
-    cmaps = ['Paired', 'Set1', 'Set2', 'Set3']
-    for cmap in cmaps:
-        plot_roi(img, cmap=cmap, colorbar=True)
-        plot_stat_map(img, cmap=cmap, colorbar=True)
-        plot_glass_brain(img, cmap=cmap, colorbar=True)
-
-    if LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0'):
-        plot_stat_map(img, cmap='viridis', colorbar=True)
-
-    plt.close()
-
-
-def test_plotting_functions_with_nans_in_bg_img():
-    bg_img = _generate_img()
-    bg_data = bg_img.get_data()
-
-    bg_data[6, 5, 1] = np.nan
-    bg_data[1, 5, 2] = np.nan
-    bg_data[1, 3, 2] = np.nan
-    bg_data[6, 5, 2] = np.inf
-
-    bg_img = nibabel.Nifti1Image(bg_data, mni_affine)
-    plot_anat(bg_img)
-    # test with plot_roi passing background image which contains nans values
-    # in it
-    roi_img = _generate_img()
-    plot_roi(roi_img=roi_img, bg_img=bg_img)
-    stat_map_img = _generate_img()
-    plot_stat_map(stat_map_img=stat_map_img, bg_img=bg_img)
-
-    plt.close()
-
-
-def test_plotting_functions_with_dim_invalid_input():
-    # Test whether error raises with bad error to input
-    img = _generate_img()
-    assert_raises(ValueError, plot_stat_map, img, dim='-10')

@@ -1,275 +1,10 @@
-0.3.1
-=====
-
-This is a minor release for BrainHack.
-
-Highlights
-----------
-
-* **Dropped support for scikit-learn older than 0.14.1** Minimum supported version
-  is now 0.15.
-
-Changelog
----------
-
-    - The function sym_to_vec is deprecated and will be removed in
-      release 0.4. Use :func:`nilearn.connectome.sym_matrix_to_vec` instead.
-
-    - Added argument `smoothing_fwhm` to
-      :class:`nilearn.regions.RegionExtractor` to control smoothing according
-      to the resolution of atlas images.
-
-Bug fix
--------
-
-    - The helper function `largest_connected_component` should now work with
-      inputs of non-native data dtypes.
-
-    - Fix plotting issues when non-finite values are present in background
-      anatomical image.
-
-    - A workaround to handle non-native endianess in the Nifti images passed
-      to resampling the image.
-
-Enhancements
--------------
-    - New data fetcher functions :func:`nilearn.datasets.fetch_neurovault` and
-      :func:`nilearn.datasets.fetch_neurovault_ids` help you download
-      statistical maps from the Neurovault (http://neurovault.org) platform.
-
-    - New function :func:`nilearn.connectome.vec_to_sym_matrix` reshapes
-      vectors to symmetric matrices. It acts as the reverse of function
-      :func:`nilearn.connectome.sym_matrix_to_vec`.
-
-    - Add an option allowing to vectorize connectivity matrices returned by the
-      "transform" method of :class:`nilearn.connectome.ConnectivityMeasure`.
-
-    - :class:`nilearn.connectome.ConnectivityMeasure` now exposes an
-      "inverse_transform" method, useful for going back from vectorized
-      connectivity coefficients to connectivity matrices. Also, it allows to
-      recover the covariance matrices for the "tangent" kind.
-
-    - Reworking and renaming of connectivity measures example. Renamed from
-      plot_connectivity_measures to plot_group_level_connectivity.
-
-    - Tighter bounding boxes when using add_contours for plotting.
-
-    - Function :func:`nilearn.image.largest_connected_component_img` to
-      directly extract the largest connected component from Nifti images.
-
-    - Improvements in plotting, decoding and functional connectivity examples.
-
-0.3.0
-======
-
-In addition, more details of this release are listed below. Please checkout
-in **0.3.0 beta** release section for minimum version support of dependencies,
-latest updates, highlights, changelog and enhancements.
-
-Changelog
----------
-
-    - Function :func:`nilearn.plotting.find_cut_slices` now supports to accept
-      Nifti1Image as an input for argument `img`.
-
-    - Helper functions `_get_mask_volume` and `_adjust_screening_percentile`
-      are now moved to param_validation file in utilties module to be used in
-      common with Decoder object.
-
-Bug fix
---------
-
-    - Fix bug uncompressing tar files with datasets fetcher.
-
-    - Fixed bunch of CircleCI documentation build failures.
-
-    - Fixed deprecations `set_axis_bgcolor` related to matplotlib in
-      plotting functions.
-
-    - Fixed bug related to not accepting a list of arrays as an input to
-      unmask, in masking module.
-
-Enhancements
--------------
-
-    - ANOVA SVM example on Haxby datasets `plot_haxby_anova_svm` in Decoding section
-      now uses `SelectPercentile` to select voxels rather than `SelectKBest`.
-
-    - New function `fast_svd` implementation in base decomposition module to
-      Automatically switch between randomized and lapack SVD (heuristic
-      of scikit-learn).
-
-0.3.0 beta
-===========
-
-To install the beta version, use::
-
-  pip install --upgrade --pre nilearn
-
-Highlights
-----------
-
-* Simple surface plotting
-
-* A function to break a parcellation into its connected components
-
-* **Dropped support for scikit-learn older than 0.14.1** Minimum supported version
-  is now 0.14.1.
-
-* **Dropped support for Python 2.6**
-
-* Minimum required version of NiBabel is now 1.2.0, to support loading annoted
-  data with freesurfer.
-
-Changelog
----------
-
-    - A helper function _safe_get_data as a nilearn utility now safely
-      removes NAN values in the images with argument ensure_finite=True.
-
-    - Connectome functions :func:`nilearn.connectome.cov_to_corr` and
-      :func:`nilearn.connectome.prec_to_partial` can now be used.
-
-Bug fix
---------
-
-    - Fix colormap issue with colorbar=True when using qualitative colormaps
-      Fixed in according with changes of matplotlib 2.0 fixes.
-
-    - Fix plotting functions to work with NAN values in the images.
-
-    - Fix bug related get dtype of the images with nibabel get_data().
-
-    - Fix bug in nilearn clean_img
-
-Enhancements
-............
-
-    - A new function :func:`nilearn.regions.connected_label_regions` to
-      extract the connected components represented as same label to regions
-      apart with each region labelled as unique label.
-
-    - New plotting modules for surface plotting visualization. Matplotlib with
-      version higher 1.3.1 is required for plotting surface data using these
-      functions.
-
-    - Function :func:`nilearn.plotting.plot_surf` can be used for plotting
-      surfaces mesh data with optional background.
-
-    - A function :func:`nilearn.plotting.plot_surf_stat_map` can be used for
-      plotting statistical maps on a brain surface with optional background.
-
-    - A function :func:`nilearn.plotting.plot_surf_roi` can be used for
-      plotting statistical maps rois onto brain surface.
-
-    - A function :func:`nilearn.datasets.fetch_surf_fsaverage5` can be used
-      for surface data object to be as background map for the above plotting
-      functions.
-
-    - A new data fetcher function
-      :func:`nilearn.datasets.fetch_atlas_surf_destrieux`
-      can give you Destrieux et. al 2010 cortical atlas in fsaverage5
-      surface space.
-
-    - A new functional data fetcher function
-      :func:`nilearn.datasets.fetch_surf_nki_enhanced` gives you resting state
-      data preprocessed and projected to fsaverage5 surface space.
-
-    - Two good examples in plotting gallery shows how to fetch atlas and NKI
-      data and used for plotting on brain surface.
-
-    - Helper function `load_surf_mesh` in surf_plotting module for loading
-      surface mesh data into two arrays, containing (x, y, z) coordinates
-      for mesh vertices and indices of mesh faces.
-
-    - Helper function `load_surf_data` in surf_plotting module for loading
-      data of numpy array to represented on a surface mesh.
-
-    - Add fetcher for Allen et al. 2011 RSN atlas in
-      :func:`nilearn.datasets.fetch_atlas_allen_2011`.
-
-    - A function :func:`nilearn.datasets.fetch_cobre` is now updated to new
-      light release of COBRE data (schizophrenia)
-
-    - A new example to show how to extract regions on labels image in example
-      section manipulating images.
-
-    - coveralls is replaces with codecov
-
-    - Upgraded to Sphinx version 0.1.7
-
-    - Extensive plotting example shows how to use contours and filled contours
-      on glass brain.
-
 0.2.6
 =====
 
 Changelog
 ---------
 
-This release enhances usage of several functions by fine tuning their
-parameters. It allows to select which Haxby subject to fetch. It also refactors
-documentation to make it easier to understand.
-Sphinx-gallery has been updated and nilearn is ready for new nibabel 2.1 version.
-Several bugs related to masks in Searchlight and ABIDE fetching have been
-resolved.
-
-Bug fix
-........
-
-    - Change default dtype in :func:`nilearn.image.concat_imgs` to be the
-      original type of the data (see #1238).
-
-    - Fix SearchLight that did not run without process_mask or with one voxel
-      mask.
-
-    - Fix flipping of left hemisphere when plotting glass brain.
-
-    - Fix bug when downloading ABIDE timeseries
-
-Enhancements
-............
-
-   - Sphinx-gallery updated to version 0.1.3.
-
-   - Refactoring of examples and documentation.
-
-   - Better ordering of regions in
-     :func:`nilearn.datasets.fetch_coords_dosenbach_2010`.
-
-   - Remove outdated power atlas example.
-
-
-API changes summary
-...................
-
-    - The parameter 'n_subjects' is deprecated and will be removed in future
-      release. Use 'subjects' instead in :func:`nilearn.datasets.fetch_haxby`.
-
-    - The function :func:`nilearn.datasets.fetch_haxby` will now fetch the
-      data accepting input given in 'subjects' as a list than integer.
-
-    - Replace `get_affine` by `affine` with recent versions of nibabel.
-
-0.2.5.1
-=======
-
-Changelog
----------
-
-This is a bugfix release.
 The new minimum required version of scikit-learn is 0.14.1
-
-API changes summary
-...................
-
-    - default option for `dim` argument in plotting functions which uses MNI
-      template as a background image is now changed to 'auto' mode. Meaning
-      that an automatic contrast setting on background image is applied by
-      default.
-
-    - Scikit-learn validation tools have been imported and are now used to check
-      consistency of input data, in SpaceNet for example.
 
 New features
 ............
@@ -278,17 +13,11 @@ New features
       the scaling of matrices is modified: we divide the diagonal by sqrt(2)
       instead of multiplying the off-diagonal elements.
 
-    - Connectivity examples rely on
-      :class:`nilearn.connectome.ConnectivityMeasure`
+API changes summary
+...................
 
-Bug fix
-........
-
-    - Scipy 0.18 introduces a bug in a corner-case of resampling. Nilearn
-      0.2.5 can give wrong results with scipy 0.18, but this is fixed in
-      0.2.6.
-
-    - Broken links and references fixed in docs
+    - Scikit-learn validation tools have been imported and are now used to check
+      consistency of input data, in SpaceNet for example.
 
 0.2.5
 =====
@@ -323,7 +52,7 @@ New features
       :func:`nilearn.datasets.fetch_localizer_button_task` to simplify
       some examples.
 
-    - The dataset function
+    - The dataset function 
       :func:`nilearn.datasets.fetch_localizer_contrasts` can now download
       a specific list of subjects rather than a range of subjects.
 
@@ -442,10 +171,10 @@ Bug fixes
      the size of a voxel
    - :class:`nilearn.regions.RegionExtractor` handles data containing Nans.
    - Confound regression does not force systematically the normalization of
-     the confounds.
+     the confounds. 
    - Force time series normalization in
      :class:`nilearn.connectome.ConnectivityMeasure`
-     and check dimensionality of the input.
+     and check dimensionality of the input. 
    - `nilearn._utils.numpy_conversions.csv_to_array` could consider
      valid CSV files as invalid.
 

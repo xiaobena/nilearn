@@ -30,61 +30,6 @@ from .compat import _basestring
 __CACHE_CHECKED = dict()
 
 
-def _check_memory(memory, verbose=0):
-    """Function to ensure an instance of a joblib.Memory object.
-
-    Parameters
-    ----------
-    memory: None or instance of joblib.Memory or str
-        Used to cache the masking process.
-        If a str is given, it is the path to the caching directory.
-
-    verbose : int, optional (default 0)
-        Verbosity level.
-
-    Returns
-    -------
-    instance of joblib.Memory.
-    """
-    if memory is None:
-        memory = Memory(cachedir=None, verbose=verbose)
-    if isinstance(memory, _basestring):
-        cache_dir = memory
-        if nilearn.EXPAND_PATH_WILDCARDS:
-            cache_dir = os.path.expanduser(cache_dir)
-
-        # Perform some verifications on given path.
-        split_cache_dir = os.path.split(cache_dir)
-        if (len(split_cache_dir) > 1 and
-                (not os.path.exists(split_cache_dir[0]) and
-                    split_cache_dir[0] != '')):
-            if (not nilearn.EXPAND_PATH_WILDCARDS and
-                    cache_dir.startswith("~")):
-                # Maybe the user want to enable expanded user path.
-                error_msg = ("Given cache path parent directory doesn't "
-                             "exists, you gave '{0}'. Enabling "
-                             "nilearn.EXPAND_PATH_WILDCARDS could solve "
-                             "this issue.".format(split_cache_dir[0]))
-            elif memory.startswith("~"):
-                # Path built on top of expanded user path doesn't exist.
-                error_msg = ("Given cache path parent directory doesn't "
-                             "exists, you gave '{0}' which was expanded "
-                             "as '{1}' but doesn't exist either. Use "
-                             "nilearn.EXPAND_PATH_WILDCARDS to deactivate "
-                             "auto expand user path (~) behavior."
-                             .format(split_cache_dir[0],
-                                     os.path.dirname(memory)))
-            else:
-                # The given cache base path doesn't exist.
-                error_msg = ("Given cache path parent directory doesn't "
-                             "exists, you gave '{0}'."
-                             .format(split_cache_dir[0]))
-            raise ValueError(error_msg)
-
-        memory = Memory(cachedir=cache_dir, verbose=verbose)
-    return memory
-
-
 def _safe_cache(memory, func, **kwargs):
     """ A wrapper for mem.cache that flushes the cache if the version
         number of nibabel has changed.
@@ -230,6 +175,9 @@ def cache(func, memory, func_memory_level=None, memory_level=None,
         memory = Memory(cachedir=None, verbose=verbose)
     cached_func = _safe_cache(memory, func, **kwargs)
     if shelve:
+        if LooseVersion(sklearn.__version__) < LooseVersion('0.15'):
+            raise ValueError('Shelving is only available if'
+                             ' scikit-learn >= 0.15 is installed.')
         cached_func = _ShelvedFunc(cached_func)
     return cached_func
 
@@ -283,7 +231,40 @@ class CacheMixin(object):
             self.memory_level = 0
         if not hasattr(self, "memory"):
             self.memory = Memory(cachedir=None, verbose=verbose)
-        self.memory = _check_memory(self.memory, verbose=verbose)
+        if isinstance(self.memory, _basestring):
+            cache_dir = self.memory
+            if nilearn.EXPAND_PATH_WILDCARDS:
+                cache_dir = os.path.expanduser(cache_dir)
+
+            # Perform some verifications on given path.
+            split_cache_dir = os.path.split(cache_dir)
+            if (len(split_cache_dir) > 1 and
+                    (not os.path.exists(split_cache_dir[0]) and
+                     split_cache_dir[0] != '')):
+                if (not nilearn.EXPAND_PATH_WILDCARDS and
+                        cache_dir.startswith("~")):
+                    # Maybe the user want to enable expanded user path.
+                    error_msg = ("Given cache path parent directory doesn't "
+                                 "exists, you gave '{0}'. Enabling "
+                                 "nilearn.EXPAND_PATH_WILDCARDS could solve "
+                                 "this issue.".format(split_cache_dir[0]))
+                elif self.memory.startswith("~"):
+                    # Path built on top of expanded user path doesn't exist.
+                    error_msg = ("Given cache path parent directory doesn't "
+                                 "exists, you gave '{0}' which was expanded "
+                                 "as '{1}' but doesn't exist either. Use "
+                                 "nilearn.EXPAND_PATH_WILDCARDS to deactivate "
+                                 "auto expand user path (~) behavior."
+                                 .format(split_cache_dir[0],
+                                         os.path.dirname(self.memory)))
+                else:
+                    # The given cache base path doesn't exist.
+                    error_msg = ("Given cache path parent directory doesn't "
+                                 "exists, you gave '{0}'."
+                                 .format(split_cache_dir[0]))
+                raise ValueError(error_msg)
+
+            self.memory = Memory(cachedir=cache_dir, verbose=verbose)
 
         # If cache level is 0 but a memory object has been provided, set
         # memory_level to 1 with a warning.

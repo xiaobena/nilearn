@@ -15,7 +15,6 @@ from .. import masking
 from .._utils import CacheMixin
 from .._utils.class_inspect import get_params
 from .._utils.niimg_conversions import _check_same_fov
-from .._utils.compat import get_affine
 
 
 class _ExtractionFunctor(object):
@@ -25,7 +24,7 @@ class _ExtractionFunctor(object):
         self.mask_img_ = mask_img_
 
     def __call__(self, imgs):
-        return masking.apply_mask(imgs, self.mask_img_), get_affine(imgs)
+        return masking.apply_mask(imgs, self.mask_img_), imgs.get_affine()
 
 
 def filter_and_mask(imgs, mask_img_, parameters,
@@ -43,7 +42,7 @@ def filter_and_mask(imgs, mask_img_, parameters,
         # now we can crop
         mask_img_ = image.crop_img(mask_img_, copy=False)
         parameters['target_shape'] = mask_img_.shape
-        parameters['target_affine'] = get_affine(mask_img_)
+        parameters['target_affine'] = mask_img_.get_affine()
 
     data, affine = filter_and_extract(imgs, _ExtractionFunctor(mask_img_),
                                       parameters,
@@ -61,7 +60,7 @@ def filter_and_mask(imgs, mask_img_, parameters,
 
 
 class NiftiMasker(BaseMasker, CacheMixin):
-    """Applying a mask to extract time-series from Niimg-like objects.
+    """Class for masking of Niimg-like objects.
 
     NiftiMasker is useful when preprocessing (detrending, standardization,
     resampling, etc.) of in-mask voxels is necessary. Use case: working with
@@ -70,7 +69,7 @@ class NiftiMasker(BaseMasker, CacheMixin):
     Parameters
     ----------
     mask_img : Niimg-like object, optional
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Mask for the data. If not given, a mask is computed in the fit step.
         Optional parameters (mask_args and mask_strategy) can be set to
         fine tune the mask extraction.
@@ -203,7 +202,7 @@ class NiftiMasker(BaseMasker, CacheMixin):
         Parameters
         ----------
         imgs: list of Niimg-like objects
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             Data on which the mask must be calculated. If this is a list,
             the affine is considered the same for all.
         """
@@ -246,7 +245,7 @@ class NiftiMasker(BaseMasker, CacheMixin):
         if self.target_affine is not None:
             self.affine_ = self.target_affine
         else:
-            self.affine_ = get_affine(self.mask_img_)
+            self.affine_ = self.mask_img_.get_affine()
         # Load data in memory
         self.mask_img_.get_data()
         if self.verbose > 10:
@@ -259,7 +258,7 @@ class NiftiMasker(BaseMasker, CacheMixin):
         Parameters
         ----------
         imgs: 3D/4D Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             Images to process. It must boil down to a 4D image with scans
             number as last dimension.
 

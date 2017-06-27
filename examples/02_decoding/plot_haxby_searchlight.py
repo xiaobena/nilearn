@@ -11,12 +11,10 @@ the fMRI (see the generated figures).
 
 #########################################################################
 # Load Haxby dataset
-# -------------------
 import numpy as np
 from nilearn import datasets
 from nilearn.image import new_img_like, load_img
 
-# We fetch 2nd subject from haxby datasets (which is default)
 haxby_dataset = datasets.fetch_haxby()
 
 # print basic information on the dataset
@@ -30,7 +28,6 @@ session = labels['chunks']
 
 #########################################################################
 # Restrict to faces and houses
-# ------------------------------
 from nilearn.image import index_img
 condition_mask = np.logical_or(y == b'face', y == b'house')
 
@@ -39,7 +36,7 @@ y, session = y[condition_mask], session[condition_mask]
 
 #########################################################################
 # Prepare masks
-# --------------
+#
 # - mask_img is the original mask
 # - process_mask_img is a subset of mask_img, it contains the voxels that
 #   should be processed (we only keep the slice z = 26 and the back of the
@@ -49,7 +46,7 @@ mask_img = load_img(haxby_dataset.mask)
 
 # .astype() makes a copy.
 process_mask = mask_img.get_data().astype(np.int)
-picked_slice = 29
+picked_slice = 27
 process_mask[..., (picked_slice + 1):] = 0
 process_mask[..., :picked_slice] = 0
 process_mask[:, 30:] = 0
@@ -57,7 +54,6 @@ process_mask_img = new_img_like(mask_img, process_mask)
 
 #########################################################################
 # Searchlight computation
-# -------------------------
 
 # Make processing parallel
 # /!\ As each thread will print its progress, n_jobs > 1 could mess up the
@@ -82,7 +78,6 @@ searchlight.fit(fmri_img, y)
 
 #########################################################################
 # F-scores computation
-# ----------------------
 from nilearn.input_data import NiftiMasker
 
 # For decoding, standardizing is often very important
@@ -99,26 +94,20 @@ p_unmasked = nifti_masker.inverse_transform(p_values).get_data()
 
 #########################################################################
 # Visualization
-# --------------
+
 # Use the fmri mean image as a surrogate of anatomical data
 from nilearn import image
 mean_fmri = image.mean_img(fmri_img)
 
-from nilearn.plotting import plot_stat_map, plot_img, show
-searchlight_img = new_img_like(mean_fmri, searchlight.scores_)
-
-# Because scores are not a zero-center test statistics, we cannot use
-# plot_stat_map
-plot_img(searchlight_img, bg_img=mean_fmri,
-         title="Searchlight", display_mode="z", cut_coords=[-9],
-         vmin=.42, cmap='hot', threshold=.2, black_bg=True)
+from nilearn.plotting import plot_stat_map, show
+plot_stat_map(new_img_like(mean_fmri, searchlight.scores_), mean_fmri,
+              title="Searchlight", display_mode="z", cut_coords=[-16],
+              colorbar=False)
 
 # F_score results
 p_ma = np.ma.array(p_unmasked, mask=np.logical_not(process_mask))
-f_score_img = new_img_like(mean_fmri, p_ma)
-plot_stat_map(f_score_img, mean_fmri,
+plot_stat_map(new_img_like(mean_fmri, p_ma), mean_fmri,
               title="F-scores", display_mode="z",
-              cut_coords=[-9],
-              colorbar=False)
+              cut_coords=[-16], colorbar=False)
 
 show()

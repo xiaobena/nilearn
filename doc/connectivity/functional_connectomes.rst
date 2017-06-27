@@ -112,8 +112,8 @@ regions, regressing out noise sources is indeed very important
    * Inspect the '.keys()' of the object returned by
      :func:`nilearn.datasets.fetch_adhd`.
 
-   * :class:`nilearn.connectome.ConnectivityMeasure` can be used to compute
-     a correlation matrix (check the shape of your matrices).
+   * :func:`numpy.corrcoef` can be used to compute a correlation matrix
+     (check the shape of your matrices).
 
    * :func:`matplotlib.pyplot.imshow` can show a correlation matrix.
 

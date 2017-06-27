@@ -21,8 +21,9 @@ predicting an output value.
 
 .. toctree::
 
-   decoding_intro.rst
+   decoding_tutorial.rst
    estimator_choice.rst
+   decoding_simulated.rst
    space_net.rst
    searchlight.rst
 

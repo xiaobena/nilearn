@@ -22,7 +22,6 @@ from nibabel.spatialimages import SpatialImage
 
 from .._utils.numpy_conversions import as_ndarray
 from .._utils.compat import _basestring
-from .._utils.compat import get_affine as _get_affine
 from .._utils.niimg import _safe_get_data
 
 import matplotlib
@@ -149,8 +148,8 @@ def _plot_img_with_bg(img, bg_img=None, cut_coords=None,
 
     if img is not False and img is not None:
         img = _utils.check_niimg_3d(img, dtype='auto')
-        data = _safe_get_data(img, ensure_finite=True)
-        affine = _get_affine(img)
+        data = _safe_get_data(img)
+        affine = img.get_affine()
 
         if np.isnan(np.sum(data)):
             data = np.nan_to_num(data)
@@ -307,7 +306,7 @@ class _MNI152Template(SpatialImage):
             data = data.astype(np.float)
             anat_mask = ndimage.morphology.binary_fill_holes(data > 0)
             data = np.ma.masked_array(data, np.logical_not(anat_mask))
-            self._affine = _get_affine(anat_img)
+            self.affine = anat_img.get_affine()
             self.data = data
             self.vmax = data.max()
             self._shape = anat_img.shape
@@ -316,14 +315,9 @@ class _MNI152Template(SpatialImage):
         self.load()
         return self.data
 
-    @property
-    def affine(self):
-        self.load()
-        return self._affine
-
     def get_affine(self):
         self.load()
-        return self._affine
+        return self.affine
 
     @property
     def shape(self):
@@ -345,7 +339,7 @@ class _MNI152Template(SpatialImage):
 MNI152TEMPLATE = _MNI152Template()
 
 
-def _load_anat(anat_img=MNI152TEMPLATE, dim='auto', black_bg='auto'):
+def _load_anat(anat_img=MNI152TEMPLATE, dim=False, black_bg='auto'):
     """ Internal function used to load anatomy, for optional diming
     """
     vmin = None
@@ -366,14 +360,11 @@ def _load_anat(anat_img=MNI152TEMPLATE, dim='auto', black_bg='auto'):
             black_bg = False
     else:
         anat_img = _utils.check_niimg_3d(anat_img)
-        # Clean anat_img for non-finite values to avoid computing unnecessary
-        # border data values.
-        data = _safe_get_data(anat_img, ensure_finite=True)
-        anat_img = new_img_like(anat_img, data, affine=_get_affine(anat_img))
         if dim or black_bg == 'auto':
             # We need to inspect the values of the image
-            vmin = np.nanmin(data)
-            vmax = np.nanmax(data)
+            data = anat_img.get_data()
+            vmin = data.min()
+            vmax = data.max()
         if black_bg == 'auto':
             # Guess if the background is rather black or light based on
             # the values of voxels near the border
@@ -383,10 +374,6 @@ def _load_anat(anat_img=MNI152TEMPLATE, dim='auto', black_bg='auto'):
             else:
                 black_bg = True
     if dim:
-        if dim != 'auto' and not isinstance(dim, numbers.Number):
-            raise ValueError(
-                "The input given for 'dim' needs to be a float. "
-                "You provided dim=%s in %s" % (str(dim), type(dim)))
         vmean = .5 * (vmin + vmax)
         ptp = .5 * (vmax - vmin)
         if black_bg:
@@ -407,7 +394,7 @@ def _load_anat(anat_img=MNI152TEMPLATE, dim='auto', black_bg='auto'):
 def plot_anat(anat_img=MNI152TEMPLATE, cut_coords=None,
               output_file=None, display_mode='ortho', figure=None,
               axes=None, title=None, annotate=True, threshold=None,
-              draw_cross=True, black_bg='auto', dim='auto', cmap=plt.cm.gray,
+              draw_cross=True, black_bg='auto', dim=False, cmap=plt.cm.gray,
               vmin=None, vmax=None, **kwargs):
     """ Plot cuts of an anatomical image (by default 3 cuts:
         Frontal, Axial, and Lateral)
@@ -460,13 +447,12 @@ def plot_anat(anat_img=MNI152TEMPLATE, cut_coords=None,
             you wish to save figures with a black background, you
             will need to pass "facecolor='k', edgecolor='k'"
             to matplotlib.pyplot.savefig.
-        dim : float, 'auto' (by default), optional
-            Dimming factor applied to background image. By default, automatic
-            heuristics are applied based upon the image intensity.
-            Accepted float values, where a typical span is between -2 and 2
-            (-2 = increase contrast; 2 = decrease contrast), but larger
-            values can be used for a more pronounced effect. 0 means no
-            dimming.
+        dim : boolean or float, optional
+            Dimming factor applied to background image. If True, automatic
+            heuristics are applied. Accepted float values, where a
+            typical span is -1 to 1 (-1 = increase contrast; 1 = decrease
+            contrast), but larger values can be used for a more
+            pronounced effect.
         cmap : matplotlib colormap, optional
             The colormap for the anat
         vmin : float
@@ -478,9 +464,6 @@ def plot_anat(anat_img=MNI152TEMPLATE, cut_coords=None,
         -----
         Arrays should be passed in numpy convention: (x, y, z)
         ordered.
-
-        For visualization, non-finite values found in passed 'anat_img'
-        are set to zero.
     """
     anat_img, black_bg, anat_vmin, anat_vmax = _load_anat(
         anat_img,
@@ -577,8 +560,8 @@ def plot_epi(epi_img=None, cut_coords=None, output_file=None,
 def plot_roi(roi_img, bg_img=MNI152TEMPLATE, cut_coords=None,
              output_file=None, display_mode='ortho', figure=None, axes=None,
              title=None, annotate=True, draw_cross=True, black_bg='auto',
-             threshold=0.5, alpha=0.7, cmap=plt.cm.gist_ncar, dim='auto',
-             vmin=None, vmax=None, **kwargs):
+             alpha=0.7, cmap=plt.cm.gist_ncar, dim=True, vmin=None, vmax=None,
+             **kwargs):
     """ Plot cuts of an ROI/mask image (by default 3 cuts: Frontal, Axial, and
         Lateral)
 
@@ -592,7 +575,7 @@ def plot_roi(roi_img, bg_img=MNI152TEMPLATE, cut_coords=None,
             See http://nilearn.github.io/manipulating_images/input_output.html
             The background image that the ROI/mask will be plotted on top of.
             If nothing is specified, the MNI152 template will be used.
-            To turn off background image, just pass "bg_img=None".
+            To turn off background image, just pass "bg_img=False".
         cut_coords : None, or a tuple of floats
             The MNI coordinates of the point where the cut is performed, in
             MNI coordinates and order.
@@ -628,35 +611,30 @@ def plot_roi(roi_img, bg_img=MNI152TEMPLATE, cut_coords=None,
             you wish to save figures with a black background, you
             will need to pass "facecolor='k', edgecolor='k'"
             to matplotlib.pyplot.savefig.
-        threshold : None, 'auto', or a number (0.5 by default), optional
+        threshold : a number, None, or 'auto'
             If None is given, the image is not thresholded.
             If a number is given, it is used to threshold the image:
             values below the threshold (in absolute value) are plotted
             as transparent. If auto is given, the threshold is determined
             magically by analysis of the image.
-        dim : float, 'auto' (by default), optional
-            Dimming factor applied to background image. By default, automatic
-            heuristics are applied based upon the background image intensity.
-            Accepted float values, where a typical span is between -2 and 2
-            (-2 = increase contrast; 2 = decrease contrast), but larger values
-            can be used for a more pronounced effect. 0 means no dimming.
+        dim : boolean or float, optional
+            Dimming factor applied to background image. If True, automatic
+            heuristics are applied. Accepted float values, where a
+            typical span is -1 to 1 (-1 = increase contrast; 1 = decrease
+            contrast), but larger values can be used for a more
+            pronounced effect.
         vmin : float
             Lower bound for plotting, passed to matplotlib.pyplot.imshow
         vmax : float
             Upper bound for plotting, passed to matplotlib.pyplot.imshow
 
-        Notes
-        -----
-        A small threshold is applied by default to eliminate numerical
-        background noise.
-
-        For visualization, non-finite values found in passed 'roi_img' or
-        'bg_img' are set to zero.
-
         See Also
         --------
+
         nilearn.plotting.plot_prob_atlas : To simply plot probabilistic atlases
             (4D images)
+
+
     """
     bg_img, black_bg, bg_vmin, bg_vmax = _load_anat(bg_img, dim=dim,
                                                     black_bg=black_bg)
@@ -668,8 +646,7 @@ def plot_roi(roi_img, bg_img=MNI152TEMPLATE, cut_coords=None,
                                 figure=figure, axes=axes, title=title,
                                 annotate=annotate,
                                 draw_cross=draw_cross,
-                                black_bg=black_bg,
-                                threshold=threshold,
+                                black_bg=black_bg, threshold=0.5,
                                 bg_vmin=bg_vmin, bg_vmax=bg_vmax,
                                 resampling_interpolation='nearest',
                                 alpha=alpha, cmap=cmap,
@@ -681,7 +658,7 @@ def plot_prob_atlas(maps_img, anat_img=MNI152TEMPLATE, view_type='auto',
                     threshold='auto', linewidths=2.5, cut_coords=None,
                     output_file=None, display_mode='ortho',
                     figure=None, axes=None, title=None, annotate=True,
-                    draw_cross=True, black_bg='auto', dim='auto',
+                    draw_cross=True, black_bg='auto', dim=False,
                     colorbar=False,
                     cmap=plt.cm.gist_rainbow, vmin=None, vmax=None,
                     alpha=0.5, **kwargs):
@@ -764,12 +741,12 @@ def plot_prob_atlas(maps_img, anat_img=MNI152TEMPLATE, view_type='auto',
             you wish to save figures with a black background, you
             will need to pass "facecolor='k', edgecolor='k'" to pylab's
             savefig.
-        dim : float, 'auto' (by default), optional
-            Dimming factor applied to background image. By default, automatic
-            heuristics are applied based upon the background image intensity.
-            Accepted float values, where a typical span is between -2 and 2
-            (-2 = increase contrast; 2 = decrease contrast), but larger values
-            can be used for a more pronounced effect. 0 means no dimming.
+        dim : boolean or float, optional
+            Dimming factor applied to background image. If True, automatic
+            heuristics are applied. Accepted float values, where a
+            typical span is -1 to 1 (-1 = increase contrast; 1 = decrease
+            contrast), but larger values can be used for a more
+            pronounced effect.
         cmap : matplotlib colormap, optional
             The colormap for the atlas maps
         colorbar : boolean, optional
@@ -889,7 +866,7 @@ def plot_stat_map(stat_map_img, bg_img=MNI152TEMPLATE, cut_coords=None,
                   figure=None, axes=None, title=None, threshold=1e-6,
                   annotate=True, draw_cross=True, black_bg='auto',
                   cmap=cm.cold_hot, symmetric_cbar="auto",
-                  dim='auto', vmax=None, **kwargs):
+                  dim=True, vmax=None, **kwargs):
     """ Plot cuts of an ROI/mask image (by default 3 cuts: Frontal, Axial, and
         Lateral)
 
@@ -955,12 +932,6 @@ def plot_stat_map(stat_map_img, bg_img=MNI152TEMPLATE, cut_coords=None,
             or from vmin to vmax. Setting to 'auto' will select the latter if
             the range of the whole image is either positive or negative.
             Note: The colormap will always be set to range from -vmax to vmax.
-        dim : float, 'auto' (by default), optional
-            Dimming factor applied to background image. By default, automatic
-            heuristics are applied based upon the background image intensity.
-            Accepted float values, where a typical scan is between -2 and 2
-            (-2 = increase constrast; 2 = decrease contrast), but larger values
-            can be used for a more pronounced effect. 0 means no dimming.
         vmax : float
             Upper bound for plotting, passed to matplotlib.pyplot.imshow
 
@@ -968,9 +939,6 @@ def plot_stat_map(stat_map_img, bg_img=MNI152TEMPLATE, cut_coords=None,
         -----
         Arrays should be passed in numpy convention: (x, y, z)
         ordered.
-
-        For visualization, non-finite values found in passed 'stat_map_img' or
-        'bg_img' are set to zero.
 
         See Also
         --------
@@ -987,7 +955,7 @@ def plot_stat_map(stat_map_img, bg_img=MNI152TEMPLATE, cut_coords=None,
     stat_map_img = _utils.check_niimg_3d(stat_map_img, dtype='auto')
 
     cbar_vmin, cbar_vmax, vmin, vmax = _get_colorbar_and_data_ranges(
-        _safe_get_data(stat_map_img, ensure_finite=True),
+        _safe_get_data(stat_map_img),
         vmax,
         symmetric_cbar,
         kwargs)

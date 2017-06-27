@@ -15,11 +15,10 @@ that have been defined via a standard GLM-based analysis.
 
 ##########################################################################
 # First we load and prepare the data
-# -----------------------------------
+
 # Fetch data using nilearn dataset fetcher
 from nilearn import datasets
-# by default we fetch 2nd subject data for analysis
-haxby_dataset = datasets.fetch_haxby()
+haxby_dataset = datasets.fetch_haxby(n_subjects=1)
 func_filename = haxby_dataset.func[0]
 
 # Print basic information on the dataset
@@ -48,7 +47,7 @@ session_labels = labels["chunks"][np.logical_not(resting_state)]
 
 ##########################################################################
 # Then we use scikit-learn for decoding on the different masks
-# -------------------------------------------------------------
+
 # The classifier: a support vector classifier
 from sklearn.svm import SVC
 classifier = SVC(C=1., kernel="linear")
@@ -85,13 +84,13 @@ for mask_name in mask_names:
             classifier,
             masked_timecourses,
             classification_target,
-            cv=cv, scoring="roc_auc")
+            cv=cv, scoring="f1")
 
         mask_chance_scores[mask_name][category] = cross_val_score(
             dummy_classifier,
             masked_timecourses,
             classification_target,
-            cv=cv, scoring="roc_auc")
+            cv=cv, scoring="f1")
 
         print("Scores: %1.2f +- %1.2f" % (
             mask_scores[mask_name][category].mean(),
@@ -100,7 +99,6 @@ for mask_name in mask_names:
 
 ##########################################################################
 # We make a simple bar plot to summarize the results
-# ---------------------------------------------------
 import matplotlib.pyplot as plt
 plt.figure()
 
@@ -120,10 +118,9 @@ for color, mask_name in zip('rgb', mask_names):
 
     tick_position = tick_position + .2
 
-plt.ylabel('Classification accurancy (AUC score)')
+plt.ylabel('Classification accurancy (f1 score)')
 plt.xlabel('Visual stimuli category')
-plt.ylim(0.3, 1)
-plt.legend(loc='lower right')
+plt.legend(loc='best')
 plt.title('Category-specific classification accuracy for different masks')
 plt.tight_layout()
 

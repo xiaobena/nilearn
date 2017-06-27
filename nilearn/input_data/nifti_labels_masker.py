@@ -10,7 +10,6 @@ from .. import _utils
 from .._utils import logger, CacheMixin, _compose_err_msg
 from .._utils.class_inspect import get_params
 from .._utils.niimg_conversions import _check_same_fov
-from .._utils.compat import get_affine
 from .. import masking
 from .. import image
 from .base_masker import filter_and_extract, BaseMasker
@@ -43,14 +42,14 @@ class NiftiLabelsMasker(BaseMasker, CacheMixin):
     Parameters
     ----------
     labels_img: Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Region definitions, as one image of labels.
 
     background_label: number, optional
         Label used in labels_img to represent background.
 
     mask_img: Niimg-like object, optional
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Mask to apply to regions before extracting signals.
 
     smoothing_fwhm: float, optional
@@ -164,8 +163,8 @@ class NiftiLabelsMasker(BaseMasker, CacheMixin):
                             "Regions and mask do not have the same shape",
                             mask_img=self.mask_img,
                             labels_img=self.labels_img))
-                if not np.allclose(get_affine(self.mask_img_),
-                                   get_affine(self.labels_img_)):
+                if not np.allclose(self.mask_img_.get_affine(),
+                                   self.labels_img_.get_affine()):
                     raise ValueError(_compose_err_msg(
                         "Regions and mask do not have the same affine.",
                         mask_img=self.mask_img, labels_img=self.labels_img))
@@ -174,7 +173,7 @@ class NiftiLabelsMasker(BaseMasker, CacheMixin):
                 logger.log("resampling the mask", verbose=self.verbose)
                 self.mask_img_ = image.resample_img(
                     self.mask_img_,
-                    target_affine=get_affine(self.labels_img_),
+                    target_affine=self.labels_img_.get_affine(),
                     target_shape=self.labels_img_.shape[:3],
                     interpolation="nearest",
                     copy=True)
@@ -203,7 +202,7 @@ class NiftiLabelsMasker(BaseMasker, CacheMixin):
         Parameters
         ----------
         imgs: 3D/4D Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             Images to process. It must boil down to a 4D image with scans
             number as last dimension.
 
@@ -232,13 +231,13 @@ class NiftiLabelsMasker(BaseMasker, CacheMixin):
                     image.resample_img, func_memory_level=2)(
                         self.labels_img_, interpolation="nearest",
                         target_shape=imgs_.shape[:3],
-                        target_affine=get_affine(imgs_))
+                        target_affine=imgs_.get_affine())
 
         target_shape = None
         target_affine = None
         if self.resampling_target == 'labels':
             target_shape = self._resampled_labels_img_.shape[:3]
-            target_affine = get_affine(self._resampled_labels_img_)
+            target_affine = self._resampled_labels_img_.get_affine()
 
         params = get_params(NiftiLabelsMasker, self,
                             ignore=['resampling_target'])

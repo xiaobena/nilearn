@@ -52,23 +52,3 @@ def test_contour_fillings_levels_in_add_contours():
     # In this case, we simply omit appending inf
     oslicer.add_contours(img, filled=True, colors='b',
                          alpha=0.1, levels=[0., 0.2])
-
-    # without passing colors and alpha. In this case, default values are
-    # chosen from matplotlib
-    oslicer.add_contours(img, filled=True, levels=[0., 0.2])
-
-    # levels with only one value
-    oslicer.add_contours(img, filled=True, levels=[0.])
-
-    # without passing levels, should work with default levels from
-    # matplotlib
-    oslicer.add_contours(img, filled=True)
-
-
-def test_user_given_cmap_with_colorbar():
-    img = load_mni152_template()
-    oslicer = OrthoSlicer(cut_coords=(0, 0, 0))
-
-    # Test with cmap given as a string
-    oslicer.add_overlay(img, cmap='Paired', colorbar=True)
-    oslicer.close()

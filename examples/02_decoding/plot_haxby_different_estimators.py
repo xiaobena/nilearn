@@ -8,12 +8,10 @@ decoding task.
 
 #############################################################################
 # We start by loading the data and applying simple transformations to it
-# -----------------------------------------------------------------------
 
 # Fetch data using nilearn dataset fetcher
 from nilearn import datasets
-# by default 2nd subject data will be fetched
-haxby_dataset = datasets.fetch_haxby()
+haxby_dataset = datasets.fetch_haxby(n_subjects=1)
 
 # print basic information on the dataset
 print('First subject anatomical nifti image (3D) located is at: %s' %
@@ -47,7 +45,7 @@ masked_timecourses = masker.fit_transform(
 
 #############################################################################
 # Then we define the various classifiers that we use
-# ---------------------------------------------------
+
 # A support vector classifier
 from sklearn.svm import SVC
 svm = SVC(C=1., kernel="linear")
@@ -94,9 +92,8 @@ classifiers = {'SVC': svm,
 
 
 #############################################################################
-# Here we compute prediction scores
-# ----------------------------------
-# Run time for all these classifiers
+# Here we compute prediction scores and run time for all these
+# classifiers
 
 # Make a data splitting object for cross validation
 from sklearn.cross_validation import LeaveOneLabelOut, cross_val_score
@@ -182,7 +179,7 @@ for classifier_name, classifier in sorted(classifiers.items()):
     weight_map = weight_img.get_data()
     threshold = np.max(np.abs(weight_map)) * 1e-3
     plot_stat_map(weight_img, bg_img=mean_epi_img,
-                  display_mode='z', cut_coords=[-15],
+                  display_mode='z', cut_coords=[-17],
                   threshold=threshold,
                   title='%s: face vs house' % classifier_name)
 

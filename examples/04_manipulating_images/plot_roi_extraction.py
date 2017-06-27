@@ -26,11 +26,11 @@ of brain connected networks given in 4D image.
 # using them for visualization.
 
 # cut in x-direction
-sagittal = -25
+sagittal = -33
 # cut in y-direction
-coronal = -37
+coronal = -24
 # cut in z-direction
-axial = -6
+axial = -17
 
 # coordinates displaying should be prepared as a list
 cut_coords = [sagittal, coronal, axial]
@@ -49,7 +49,7 @@ from nilearn import datasets
 
 # First, we fetch single subject specific data with haxby datasets: to have
 # anatomical image, EPI images and masks images
-haxby_dataset = datasets.fetch_haxby()
+haxby_dataset = datasets.fetch_haxby(n_subjects=1)
 
 # print basic information on the dataset
 print('First subject anatomical nifti image (3D) located is at: %s' %
@@ -268,9 +268,9 @@ plot_roi(dil_bin_p_values_and_vt_img, mean_img,
 # integer label to each one of them.
 labels, n_labels = ndimage.label(dil_bin_p_values_and_vt)
 # we take first roi data with labels assigned as integer 1
-first_roi_data = (labels == 5).astype(np.int)
+first_roi_data = (labels == 1).astype(np.int)
 # Similarly, second roi data is assigned as integer 2
-second_roi_data = (labels == 3).astype(np.int)
+second_roi_data = (labels == 2).astype(np.int)
 # Visualizing the connected components
 # First, we create a Nifti image type from first roi data in a array
 first_roi_img = new_img_like(fmri_img, first_roi_data)

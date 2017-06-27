@@ -11,13 +11,12 @@ See :ref:`plotting` for more details.
 """
 
 ###############################################################################
-# Retrieve data from nilearn provided (general-purpose) datasets
-# ---------------------------------------------------------------
+# First, we retrieve from nilearn provided (general-purpose) datasets
 
 from nilearn import datasets
 
 # haxby dataset to have EPI images and masks
-haxby_dataset = datasets.fetch_haxby()
+haxby_dataset = datasets.fetch_haxby(n_subjects=1)
 
 # print basic information on the dataset
 print('First subject anatomical nifti image (3D) is at: %s' %

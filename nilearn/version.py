@@ -2,7 +2,7 @@
 """
 nilearn version, required package versions, and utilities for checking
 """
-# Author: Loic Esteve, Ben Cipollini
+# Author: Loïc Estève, Ben Cipollini
 # License: simplified BSD
 
 # PEP0440 compatible formatted version, see:
@@ -21,13 +21,14 @@ nilearn version, required package versions, and utilities for checking
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = '0.3.1'
+__version__ = '0.2.5'
 
 _NILEARN_INSTALL_MSG = 'See %s for installation information.' % (
     'http://nilearn.github.io/introduction.html#installation')
 
 # This is a tuple to preserve order, so that dependencies are checked
-#   in some meaningful order (more => less 'core').
+#   in some meaningful order (more => less 'core').  We avoid using
+#   collections.OrderedDict to preserve Python 2.6 compatibility.
 REQUIRED_MODULE_METADATA = (
     ('numpy', {
         'min_version': '1.6.1',
@@ -38,11 +39,11 @@ REQUIRED_MODULE_METADATA = (
         'required_at_installation': True,
         'install_info': _NILEARN_INSTALL_MSG}),
     ('sklearn', {
-        'min_version': '0.15',
+        'min_version': '0.14.1',
         'required_at_installation': True,
         'install_info': _NILEARN_INSTALL_MSG}),
     ('nibabel', {
-        'min_version': '1.2.0',
+        'min_version': '1.1.0',
         'required_at_installation': False}))
 
 OPTIONAL_MATPLOTLIB_MIN_VERSION = '1.1.1'

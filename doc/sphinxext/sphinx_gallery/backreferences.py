@@ -75,7 +75,7 @@ def get_short_module_name(module_name, obj_name):
         short_name = '.'.join(parts[:i])
         try:
             exec('from %s import %s' % (short_name, obj_name))
-        except Exception:  # libraries can throw all sorts of exceptions...
+        except ImportError:
             # get the last working module name
             short_name = '.'.join(parts[:(i + 1)])
             break
@@ -97,22 +97,13 @@ def identify_names(code):
     e.HelloWorld HelloWorld d d
     """
     finder = NameFinder()
-    try:
-        finder.visit(ast.parse(code))
-    except SyntaxError:
-        return {}
+    finder.visit(ast.parse(code))
 
     example_code_obj = {}
     for name, full_name in finder.get_mapping():
         # name is as written in file (e.g. np.asarray)
         # full_name includes resolved import path (e.g. numpy.asarray)
-        splitted = full_name.rsplit('.', 1)
-        if len(splitted) == 1:
-            # module without attribute. This is not useful for
-            # backreferences
-            continue
-
-        module, attribute = splitted
+        module, attribute = full_name.rsplit('.', 1)
         # get shortened module name
         module_short = get_short_module_name(module, attribute)
         cobj = {'name': attribute, 'module': module,
@@ -136,8 +127,6 @@ def scan_used_functions(example_file, gallery_conf):
     return backrefs
 
 
-# XXX This figure:: uses a forward slash even on Windows, but the op.join's
-# elsewhere will use backslashes...
 THUMBNAIL_TEMPLATE = """
 .. raw:: html
 

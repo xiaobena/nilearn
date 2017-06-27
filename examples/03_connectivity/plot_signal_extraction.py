@@ -23,12 +23,10 @@ documentation <parcellation_time_series>` for more.
 
 ##############################################################################
 # Retrieve the atlas and the data
-# --------------------------------
 from nilearn import datasets
 
 dataset = datasets.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm')
-atlas_filename = dataset.maps
-labels = dataset.labels
+atlas_filename, labels = dataset.maps, dataset.labels
 
 print('Atlas ROIs are located in nifti image (4D) at: %s' %
       atlas_filename)  # 4D data
@@ -38,9 +36,8 @@ data = datasets.fetch_adhd(n_subjects=1)
 fmri_filenames = data.func[0]
 
 ##############################################################################
-# Extract signals on a parcellation defined by labels
-# -----------------------------------------------------
-# Using the NiftiLabelsMasker
+# Extract signals on a parcellation defined by labels using the
+# NiftiLabelsMasker
 from nilearn.input_data import NiftiLabelsMasker
 masker = NiftiLabelsMasker(labels_img=atlas_filename, standardize=True,
                            memory='nilearn_cache', verbose=5)
@@ -53,13 +50,10 @@ time_series = masker.fit_transform(fmri_filenames, confounds=data.confounds)
 
 ##############################################################################
 # Compute and display a correlation matrix
-# -----------------------------------------
-from nilearn.connectome import ConnectivityMeasure
-correlation_measure = ConnectivityMeasure(kind='correlation')
-correlation_matrix = correlation_measure.fit_transform([time_series])[0]
+import numpy as np
+correlation_matrix = np.corrcoef(time_series.T)
 
 # Plot the correlation matrix
-import numpy as np
 from matplotlib import pyplot as plt
 plt.figure(figsize=(10, 10))
 # Mask the main diagonal for visualization:
@@ -77,12 +71,11 @@ plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
 
 ###############################################################################
 # Same thing without confounds, to stress the importance of confounds
-# --------------------------------------------------------------------
 
 time_series = masker.fit_transform(fmri_filenames)
 # Note how we did not specify confounds above. This is bad!
 
-correlation_matrix = correlation_measure.fit_transform([time_series])[0]
+correlation_matrix = np.corrcoef(time_series.T)
 
 # Mask the main diagonal for visualization:
 np.fill_diagonal(correlation_matrix, 0)

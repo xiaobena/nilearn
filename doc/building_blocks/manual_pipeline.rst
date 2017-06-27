@@ -40,13 +40,13 @@ example, we can download the data from the
 `dataset.func` contains filenames referring to dataset files on the disk::
 
   >>> list(sorted(dataset.keys())) # doctest: +SKIP
-  ['anat', 'description', 'func', 'mask', 'mask_face', 'mask_face_little', 'mask_house', 'mask_house_little', 'mask_vt', 'session_target']
+  ['anat', 'description', 'func', 'mask_face', 'mask_face_little', 'mask_house', 'mask_house_little', 'mask_vt', 'session_target']
   >>> dataset.func # doctest: +ELLIPSIS +SKIP
-  ['.../haxby2001/subj2/bold.nii.gz']
+  ['.../haxby2001/subj1/bold.nii.gz']
 
 Access supplementary information on the dataset:
 
-  >>> print(haxby_dataset['description']) # doctest: +SKIP
+  >>> print haxby_dataset['description'] # doctest: +SKIP
 
 The complete list of the data-downloading functions can be found in the
 :ref:`reference documentation for the datasets <datasets_ref>`.
@@ -72,7 +72,7 @@ These conditions are presented as string into a CSV file. The numpy function
    * `pandas <http://pandas.pydata.org/>`_ is a very useful Python
      library to load CSV files and process their data
 
-For example, we will now consider only the conditions *cat* and *face* from our dataset.
+For example, we will now remove the *rest* condition from our dataset.
 This can be done as follows:
 
 .. literalinclude:: ../../examples/plot_decoding_tutorial.py

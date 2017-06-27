@@ -20,7 +20,7 @@ def test_searchlight():
     mask = np.ones((5, 5, 5), np.bool)
     mask_img = nibabel.Nifti1Image(mask.astype(np.int), np.eye(4))
     # Create a condition array
-    cond = np.arange(frames, dtype=int) > (frames // 2)
+    cond = np.arange(frames, dtype=int) > frames // 2
 
     # Create an activation pixel.
     data[2, 2, 2, :] = 0
@@ -28,9 +28,9 @@ def test_searchlight():
     data_img = nibabel.Nifti1Image(data, np.eye(4))
 
     # Define cross validation
-    from sklearn.cross_validation import KFold
+    from sklearn.cross_validation import check_cv
     # avoid using KFold for compatibility with sklearn 0.10-0.13
-    cv = KFold(len(cond), 4)
+    cv = check_cv(4, cond)
     n_jobs = 1
 
     # Run Searchlight with different radii
@@ -42,18 +42,8 @@ def test_searchlight():
     assert_equal(np.where(sl.scores_ == 1)[0].size, 1)
     assert_equal(sl.scores_[2, 2, 2], 1.)
 
-    # The voxel selected in process_mask_img is too far from the signal
-    process_mask = np.zeros((5, 5, 5), np.bool)
-    process_mask[0, 0, 0] = True
-    process_mask_img = nibabel.Nifti1Image(process_mask.astype(np.int),
-                                           np.eye(4))
-    sl = searchlight.SearchLight(mask_img, process_mask_img=process_mask_img,
-                                 radius=0.5, n_jobs=n_jobs,
-                                 scoring='accuracy', cv=cv)
-    sl.fit(data_img, cond)
-    assert_equal(np.where(sl.scores_ == 1)[0].size, 0)
-
     # Medium radius : little ball selected
+
     sl = searchlight.SearchLight(mask_img, process_mask_img=mask_img, radius=1,
                                  n_jobs=n_jobs, scoring='accuracy', cv=cv)
     sl.fit(data_img, cond)

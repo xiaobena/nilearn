@@ -9,7 +9,7 @@ echo "Remotes:"
 git remote --verbose
 
 # Find the remote with the project name (upstream in most cases)
-REMOTE=$(git remote -v | grep $PROJECT | cut -f1 | head -1 || echo '')
+REMOTE=$(git remote -v | grep $PROJECT | cut -f1 | head -1)
 
 # Add a temporary remote if needed. For example this is necessary when
 # Travis is configured to run in a fork. In this case 'origin' is the

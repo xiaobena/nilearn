@@ -293,7 +293,7 @@ plot, and has methods to add overlays, contours or edge maps::
                   statistical image or EPI image. This is useful for seed
                   based regions specific interpretation of brain images.
                   |hack|
-                  **Example:** :ref:`sphx_glr_auto_examples_03_connectivity_plot_seed_to_voxel_correlation.py`
+                  **Example:** :ref:`sphx_glr_auto_examples_03_connectivity_plot_seed_based_correlation.py`
 
 ================= =========================================================
 
@@ -327,40 +327,4 @@ that can be used to save the plot to an image file::
     # Don't forget to close the display
     >>> display.close()     # doctest: +SKIP
 
-Surface plotting
-================
-
-Plotting functions required to plot surface data or statistical maps
-on a brain surface.
-
-.. versionadded:: 0.3
-
-NOTE: These functions works for only with matplotlib higher than 1.3.1.
-
-
-.. |plot_surf_roi| image:: ../auto_examples/01_plotting/images/sphx_glr_plot_surf_atlas_001.png
-     :target: ../auto_examples/01_plotting/plot_surf_atlas.html
-     :scale: 50
-
-.. |plot_surf_stat_map| image:: ../auto_examples/01_plotting/images/sphx_glr_plot_surf_stat_map_001.png
-     :target: ../auto_examples/01_plotting/plot_surf_stat_map.html
-     :scale: 50
-
-
-=====================   ===================================================================
-=====================   ===================================================================
-|plot_surf_roi|          :func:`plot_surf_roi`
-                         |hack|
-                         Plotting surface atlases on a brain surface
-                         |hack|
-                         **Example:**
-                         :ref:`sphx_glr_auto_examples_01_plotting_plot_surf_atlas.py`
-
-|plot_surf_stat_map|     :func:`plot_surf_stat_map`
-                         |hack|
-                         Plotting statistical maps onto a brain surface
-                         |hack|
-                         **Example:**
-                         :ref:`sphx_glr_auto_examples_01_plotting_plot_surf_stat_map.py`
-=====================   ===================================================================
 

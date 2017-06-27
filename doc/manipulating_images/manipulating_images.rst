@@ -199,6 +199,7 @@ do it manually below:
 
 .. literalinclude:: ../../examples/01_plotting/plot_visualization.py
      :start-after: # Applying the mask to extract the corresponding time series
+     :end-before: # Find voxels of interest
 
 .. figure:: ../auto_examples/01_plotting/images/sphx_glr_plot_visualization_003.png
     :target: ../auto_examples/01_plotting/plot_visualization.html
@@ -230,7 +231,7 @@ ROI mask:
  * **Mask intersection and dilation**: Post-processing the results with
    simple morphological operations, mask intersection and dilation. 
 
-   * we can use another mask, such as a grey-matter mask, to select
+   * we can use another mask, such as a grey-matter matter, to select
      only the voxels which are common in both masks.
 
    * we can do `morphological dilation
@@ -245,17 +246,6 @@ ROI mask:
  * **Saving the result**: The final voxel mask is saved to disk using
    the 'to_filename' method of the image object.
    (or **nibabel.save**).
-
-
-.. seealso::
-
-   For extracting connected components:
-
-   * A function :func:`nilearn.regions.connected_regions` can be used readily
-     on probabilistic atlas Nifti-like images whereas
-
-   * A function :func:`nilearn.regions.connected_label_regions` can be used on
-     atlases denoted as labels. For instance, atlases labelled using KMeans.
 
 .. _nibabel: http://nipy.sourceforge.net/nibabel/
 

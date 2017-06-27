@@ -111,7 +111,7 @@ fi
 pip install psutil memory_profiler
 
 if [[ "$COVERAGE" == "true" ]]; then
-    pip install codecov
+    pip install coverage coveralls
 fi
 
 # numpy not installed when skipping the tests so we do not want to run

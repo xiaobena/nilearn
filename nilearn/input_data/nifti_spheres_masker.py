@@ -14,7 +14,6 @@ from ..image.resampling import coord_transform
 from .._utils import CacheMixin
 from .._utils.niimg_conversions import check_niimg_4d, check_niimg_3d
 from .._utils.class_inspect import get_params
-from .._utils.compat import get_affine
 from .. import image
 from .. import masking
 from .base_masker import filter_and_extract, BaseMasker
@@ -23,7 +22,7 @@ from .base_masker import filter_and_extract, BaseMasker
 def _apply_mask_and_get_affinity(seeds, niimg, radius, allow_overlap,
                                  mask_img=None):
     seeds = list(seeds)
-    affine = get_affine(niimg)
+    affine = niimg.get_affine()
 
     # Compute world coordinates of all in-mask voxels.
 
@@ -95,16 +94,17 @@ def _iter_signals_from_spheres(seeds, niimg, radius, allow_overlap,
         Seed definitions. List of coordinates of the seeds in the same space
         as the images (typically MNI or TAL).
     imgs: 3D/4D Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Images to process. It must boil down to a 4D image with scans
         number as last dimension.
-    radius: float
+    radius: float, optional
         Indicates, in millimeters, the radius for the sphere around the seed.
+        Default is None (signal is extracted on a single voxel).
     allow_overlap: boolean
         If False, an error is raised if the maps overlaps (ie at least two
-        maps have a non-zero value for the same voxel).
+        maps have a non-zero value for the same voxel). Default is False.
     mask_img: Niimg-like object, optional
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Mask to apply to regions before extracting signals.
     """
     X, A = _apply_mask_and_get_affinity(seeds, niimg, radius,
@@ -157,7 +157,7 @@ class NiftiSpheresMasker(BaseMasker, CacheMixin):
         Default is None (signal is extracted on a single voxel).
 
     mask_img: Niimg-like object, optional
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Mask to apply to regions before extracting signals.
 
     allow_overlap: boolean, optional
@@ -287,7 +287,7 @@ class NiftiSpheresMasker(BaseMasker, CacheMixin):
         Parameters
         ----------
         imgs: 3D/4D Niimg-like object
-            See http://nilearn.github.io/manipulating_images/input_output.html
+            See http://nilearn.github.io/manipulating_images/input_output.html.
             Images to process. It must boil down to a 4D image with scans
             number as last dimension.
 

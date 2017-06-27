@@ -41,11 +41,7 @@ uses.
    :template: function.rst
 
    sym_to_vec
-   sym_matrix_to_vec
-   vec_to_sym_matrix
    group_sparse_covariance
-   cov_to_corr
-   prec_to_partial
 
 .. _datasets_ref:
 
@@ -75,7 +71,6 @@ uses.
    fetch_atlas_yeo_2011
    fetch_atlas_aal
    fetch_atlas_basc_multiscale_2015
-   fetch_atlas_allen_2011
    fetch_coords_dosenbach_2010
    fetch_abide_pcp
    fetch_adhd
@@ -87,14 +82,9 @@ uses.
    fetch_localizer_calculation_task
    fetch_miyawaki2008
    fetch_nyu_rest
-   fetch_surf_nki_enhanced
-   fetch_surf_fsaverage5
-   fetch_atlas_surf_destrieux
    fetch_oasis_vbm
    fetch_megatrawls_netmats
    fetch_cobre
-   fetch_neurovault
-   fetch_neurovault_ids
    get_data_dirs
    load_mni152_template
    load_mni152_brain_mask
@@ -164,7 +154,6 @@ uses.
    high_variance_confounds
    index_img
    iter_img
-   largest_connected_component_img
    load_img
    math_img
    mean_img
@@ -244,7 +233,6 @@ uses.
    :template: function.rst
 
    connected_regions
-   connected_label_regions
    img_to_signals_labels
    signals_to_img_labels
    img_to_signals_maps
@@ -309,9 +297,6 @@ uses.
    plot_glass_brain
    plot_connectome
    plot_prob_atlas
-   plot_surf
-   plot_surf_roi
-   plot_surf_stat_map
    show
 
 **Classes**:

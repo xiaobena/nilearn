@@ -8,10 +8,8 @@ of the Functional Connectivity Megatrawl project.
 See :func:`nilearn.datasets.fetch_megatrawls_netmats` documentation for more details.
 """
 ################################################################################
-# Fetching the Megatrawls Network matrices
-# ----------------------------------------
 # Fetching the partial correlation matrices of dimensionality d=300 with
-# timeseries method 'eigen regression'
+# timeseries method 'eigen regression' by importing datasets module
 from nilearn import datasets
 
 netmats = datasets.fetch_megatrawls_netmats(dimensionality=300,
@@ -23,13 +21,12 @@ partial_correlation = netmats.correlation_matrices
 
 ################################################################################
 # Visualization
-# -------------
-# Import matplotlib and nilearn plotting modules to use its utilities for
+# Importing matplotlib and nilearn plotting modules to use its utilities for
 # plotting correlation matrices
 import matplotlib.pyplot as plt
 from nilearn import plotting
 
-title = "Partial correlation matrices of d=300'"
+title = "Partial correlation matrices of d=300 with timeseries='eigen_regression'"
 plt.figure()
 plt.imshow(partial_correlation, interpolation="nearest", cmap=plotting.cm.bwr)
 plt.colorbar()

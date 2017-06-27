@@ -179,10 +179,10 @@ def test_unmask():
 
     masked4D = data4D[mask, :].T
     unmasked4D = data4D.copy()
-    unmasked4D[np.logical_not(mask), :] = 0
+    unmasked4D[-mask, :] = 0
     masked3D = data3D[mask]
     unmasked3D = data3D.copy()
-    unmasked3D[np.logical_not(mask)] = 0
+    unmasked3D[-mask] = 0
 
     # 4D Test, test value ordering at the same time.
     t = unmask(masked4D, mask_img, order="C").get_data()
@@ -325,17 +325,6 @@ def test_intersect_masks():
     mask_ab[2, 2] = 1
     mask_ab_ = intersect_masks([mask_a_img, mask_b_img], threshold=1.)
     assert_array_equal(mask_ab, mask_ab_.get_data())
-    # Test intersect mask images with '>f8'. This function uses
-    # largest_connected_component to check if intersect_masks passes with
-    # connected=True (which is by default)
-    mask_a_img_change_dtype = Nifti1Image(mask_a_img.get_data().astype('>f8'),
-                                          affine=mask_a_img.get_affine())
-    mask_b_img_change_dtype = Nifti1Image(mask_b_img.get_data().astype('>f8'),
-                                          affine=mask_b_img.get_affine())
-    mask_ab_change_type = intersect_masks([mask_a_img_change_dtype,
-                                           mask_b_img_change_dtype],
-                                          threshold=1.)
-    assert_array_equal(mask_ab, mask_ab_change_type.get_data())
 
     mask_abc = mask_a + mask_b + mask_c
     mask_abc_ = intersect_masks([mask_a_img, mask_b_img, mask_c_img],
@@ -412,14 +401,3 @@ def test_nifti_masker_empty_mask_warning():
         ValueError,
         "The mask is invalid as it is empty: it masks all data",
         NiftiMasker(mask_strategy="epi").fit_transform, X)
-
-
-def test_unmask_list(random_state=42):
-    rng = np.random.RandomState(random_state)
-    shape = (3, 4, 5)
-    affine = np.eye(4)
-    mask_data = (rng.rand(*shape) < .5)
-    mask_img = Nifti1Image(mask_data.astype(np.uint8), affine)
-    a = unmask(mask_data[mask_data], mask_img)
-    b = unmask(mask_data[mask_data].tolist(), mask_img)  # shouldn't crash
-    assert_array_equal(a.get_data(), b.get_data())

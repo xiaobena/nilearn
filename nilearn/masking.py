@@ -4,7 +4,6 @@ Utilities to compute and operate on brain masks
 # Author: Gael Varoquaux, Alexandre Abraham, Philippe Gervais
 # License: simplified BSD
 import warnings
-import numbers
 
 import numpy as np
 from scipy import ndimage
@@ -15,7 +14,6 @@ from .image import new_img_like
 from ._utils.cache_mixin import cache
 from ._utils.ndimage import largest_connected_component, get_border_data
 from ._utils.niimg import _safe_get_data
-from ._utils.compat import get_affine
 
 
 class MaskWarning(UserWarning):
@@ -31,7 +29,7 @@ def _load_mask_img(mask_img, allow_empty=False):
     Parameters
     ----------
     mask_img: Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         The mask to check
 
     allow_empty: boolean, optional
@@ -63,7 +61,7 @@ def _load_mask_img(mask_img, allow_empty=False):
                          % values)
 
     mask = _utils.as_ndarray(mask, dtype=bool)
-    return mask, get_affine(mask_img)
+    return mask, mask_img.get_affine()
 
 
 def _extrapolate_out_mask(data, mask, iterations=1):
@@ -80,7 +78,7 @@ def _extrapolate_out_mask(data, mask, iterations=1):
     masked_data[1:-1, 1:-1, 1:-1] = data.copy()
     masked_data[np.logical_not(larger_mask)] = np.nan
     outer_shell = larger_mask.copy()
-    outer_shell[1:-1, 1:-1, 1:-1] = np.logical_xor(new_mask, mask)
+    outer_shell[1:-1, 1:-1, 1:-1] = new_mask - mask
     outer_shell_x, outer_shell_y, outer_shell_z = np.where(outer_shell)
     extrapolation = list()
     for i, j, k in [(0, 1, 0), (0, -1, 0), (1, 0, 0), (-1, 0, 0),
@@ -113,7 +111,7 @@ def intersect_masks(mask_imgs, threshold=0.5, connected=True):
     Parameters
     ----------
     mask_imgs: list of Niimg-like objects
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         3D individual masks with same shape and affine.
 
     threshold: float, optional
@@ -198,7 +196,7 @@ def compute_epi_mask(epi_img, lower_cutoff=0.2, upper_cutoff=0.85,
     Parameters
     ----------
     epi_img: Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         EPI image, used to compute the mask. 3D and 4D images are accepted.
         If a 3D image is given, we suggest to use the mean image
 
@@ -303,7 +301,7 @@ def compute_multi_epi_mask(epi_imgs, lower_cutoff=0.2, upper_cutoff=0.85,
     Parameters
     ----------
     epi_imgs: list of Niimg-like objects
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         A list of arrays, each item being a subject or a session.
         3D and 4D images are accepted.
         If 3D images is given, we suggest to use the mean image of each
@@ -379,7 +377,7 @@ def compute_background_mask(data_imgs, border_size=2,
     Parameters
     ----------
     data_imgs: Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Images used to compute the mask. 3D and 4D images are accepted.
         If a 3D image is given, we suggest to use the mean image
 
@@ -457,7 +455,7 @@ def compute_multi_background_mask(data_imgs, border_size=2, upper_cutoff=0.85,
     Parameters
     ----------
     data_imgs: list of Niimg-like objects
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         A list of arrays, each item being a subject or a session.
         3D and 4D images are accepted.
         If 3D images is given, we suggest to use the mean image of each
@@ -527,11 +525,11 @@ def apply_mask(imgs, mask_img, dtype='f',
     Parameters
     -----------
     imgs: list of 4D Niimg-like objects
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Images to be masked. list of lists of 3D images are also accepted.
 
     mask_img: Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         3D mask array: True where a voxel should be used.
 
     dtype: numpy dtype or 'f'
@@ -575,7 +573,7 @@ def _apply_mask_fmri(imgs, mask_img, dtype='f',
     """
 
     mask_img = _utils.check_niimg_3d(mask_img)
-    mask_affine = get_affine(mask_img)
+    mask_affine = mask_img.get_affine()
     mask_data = _utils.as_ndarray(mask_img.get_data(),
                                   dtype=np.bool)
 
@@ -583,12 +581,12 @@ def _apply_mask_fmri(imgs, mask_img, dtype='f',
         ensure_finite = True
 
     imgs_img = _utils.check_niimg(imgs)
-    affine = get_affine(imgs_img)[:3, :3]
+    affine = imgs_img.get_affine()[:3, :3]
 
-    if not np.allclose(mask_affine, get_affine(imgs_img)):
+    if not np.allclose(mask_affine, imgs_img.get_affine()):
         raise ValueError('Mask affine: \n%s\n is different from img affine:'
                          '\n%s' % (str(mask_affine),
-                                   str(get_affine(imgs_img))))
+                                   str(imgs_img.get_affine())))
 
     if not mask_data.shape == imgs_img.shape[:3]:
         raise ValueError('Mask shape: %s is different from img shape:%s'
@@ -624,7 +622,7 @@ def _unmask_3d(X, mask, order="C"):
         Masked data. shape: (features,)
 
     mask: Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Mask. mask.ndim must be equal to 3, and dtype *must* be bool.
     """
 
@@ -685,7 +683,7 @@ def unmask(X, mask_img, order="F"):
         Masked data. shape: (samples #, features #).
         If X is one-dimensional, it is assumed that samples# == 1.
     mask_img: niimg: Niimg-like object
-        See http://nilearn.github.io/manipulating_images/input_output.html
+        See http://nilearn.github.io/manipulating_images/input_output.html.
         Must be 3-dimensional.
 
     Returns
@@ -699,23 +697,19 @@ def unmask(X, mask_img, order="F"):
         - X.ndim == 1:
           Shape: (mask.shape[0], mask.shape[1], mask.shape[2])
     """
-    # Handle lists. This can be a list of other lists / arrays, or a list or
-    # numbers. In the latter case skip.
-    if isinstance(X, list) and not isinstance(X[0], numbers.Number):
+
+    if isinstance(X, list):
         ret = []
         for x in X:
             ret.append(unmask(x, mask_img, order=order))  # 1-level recursion
         return ret
 
-    # The code after this block assumes that X is an ndarray; ensure this
-    X = np.asanyarray(X)
-
     mask_img = _utils.check_niimg_3d(mask_img)
     mask, affine = _load_mask_img(mask_img)
 
-    if np.ndim(X) == 2:
+    if X.ndim == 2:
         unmasked = _unmask_4d(X, mask, order=order)
-    elif np.ndim(X) == 1:
+    elif X.ndim == 1:
         unmasked = _unmask_3d(X, mask, order=order)
     else:
         raise TypeError("Masked data X must be 2D or 1D array; "

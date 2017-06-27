@@ -2,7 +2,7 @@
 Group Sparse inverse covariance for multi-subject connectome
 =============================================================
 
-This example shows how to estimate a connectome on a group of subjects
+This example shows how to estimate a connectome on a groupe of subjects
 using the group sparse inverse covariance estimate.
 
 """
@@ -43,7 +43,6 @@ def plot_matrices(cov, prec, title):
 
 ##############################################################################
 # Fetching datasets
-# ------------------
 from nilearn import datasets
 msdl_atlas_dataset = datasets.fetch_atlas_msdl()
 adhd_dataset = datasets.fetch_adhd(n_subjects=n_subjects)
@@ -55,7 +54,6 @@ print('First subject functional nifti image (4D) is at: %s' %
 
 ##############################################################################
 # Extracting region signals
-# --------------------------
 from nilearn import image
 from nilearn import input_data
 
@@ -87,7 +85,6 @@ for func_filename, confound_filename in zip(func_filenames,
 
 ##############################################################################
 # Computing group-sparse precision matrices
-# ------------------------------------------
 from nilearn.connectome import GroupSparseCovarianceCV
 gsc = GroupSparseCovarianceCV(verbose=2)
 gsc.fit(subject_time_series)
@@ -99,7 +96,6 @@ gl.fit(np.concatenate(subject_time_series))
 
 ##############################################################################
 # Displaying results
-# -------------------
 atlas_imgs = image.iter_img(msdl_atlas_dataset.maps)
 atlas_region_coords = [plotting.find_xyz_cut_coords(img) for img in atlas_imgs]
 

@@ -10,7 +10,7 @@ It is slightly oriented towards a *decoding* application, that is the
 prediction of external variables such as behavior or clinical traits from
 brain images. For a didactic introduction to decoding with nilearn, see
 the :ref:`dedicated section of the nilearn documentation
-<decoding_intro>`.
+<decoding_tutorial>`.
 
 .. contents:: **Contents**
     :local:
@@ -68,7 +68,7 @@ There are two noteworthy strategies:
 
 The "One vs One" strategy is more computationally costly than the "One
 vs All". The former scales as the square of the number of classes,
-whereas the latter is linear with the number of classes.
+whereas the former is linear with the number of classes.
 
 .. seealso::
 
@@ -209,22 +209,7 @@ little guarantee on the brain maps.
    :target: ../auto_examples/02_decoding/plot_haxby_different_estimators.html
    :scale: 70
 
-
 .. seealso::
 
    * :ref:`space_net`
-
-|
-
-.. topic:: **Decoding on simulated data**
-
-   Simple simulations may be useful to understand the behavior of a given
-   decoder on data. In particular, simulations enable us to set the true
-   weight maps and compare them to the ones retrieved by decoders. A full
-   example running simulations and discussing them can be found in
-   :ref:`sphx_glr_auto_examples_02_decoding_plot_simulated_data.py`
-   Simulated data cannot easily mimic all properties of brain data. An
-   important aspect, however, is its spatial structure, that we create in
-   the simulations.
-
 

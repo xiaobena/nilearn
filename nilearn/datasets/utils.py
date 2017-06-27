@@ -328,11 +328,8 @@ def _uncompress_file(file_, delete_archive=True, verbose=1):
         processed = False
         if zipfile.is_zipfile(file_):
             z = zipfile.ZipFile(file_)
-            z.extractall(path=data_dir)
+            z.extractall(data_dir)
             z.close()
-            if delete_archive:
-                os.remove(file_)
-            file_ = filename
             processed = True
         elif ext == '.gz' or header.startswith(b'\x1f\x8b'):
             import gzip
@@ -347,17 +344,17 @@ def _uncompress_file(file_, delete_archive=True, verbose=1):
             if delete_archive:
                 os.remove(file_)
             file_ = filename
+            filename, ext = os.path.splitext(file_)
             processed = True
-        if os.path.isfile(file_) and tarfile.is_tarfile(file_):
+        if tarfile.is_tarfile(file_):
             with contextlib.closing(tarfile.open(file_, "r")) as tar:
                 tar.extractall(path=data_dir)
-            if delete_archive:
-                os.remove(file_)
             processed = True
         if not processed:
             raise IOError(
                     "[Uncompress] unknown archive file format: %s" % file_)
-
+        if delete_archive:
+            os.remove(file_)
         if verbose > 0:
             sys.stderr.write('.. done.\n')
     except Exception as e:
@@ -394,6 +391,7 @@ def _filter_column(array, col, criteria):
         not isinstance(criteria, bytes) and
         not isinstance(criteria, tuple) and
             isinstance(criteria, collections.Iterable)):
+
         filter = np.zeros(array.shape[0], dtype=np.bool)
         for criterion in criteria:
             filter = np.logical_or(filter,
@@ -409,10 +407,6 @@ def _filter_column(array, col, criteria):
             return array[col] >= criteria[0]
         filter = array[col] <= criteria[1]
         return np.logical_and(filter, array[col] >= criteria[0])
-
-    # Handle strings with different encodings
-    if isinstance(criteria, (_basestring, bytes)):
-        criteria = np.array(criteria).astype(array[col].dtype)
 
     return array[col] == criteria
 
@@ -601,8 +595,8 @@ def _get_dataset_descr(ds_name):
     fname = ds_name
 
     try:
-        with open(os.path.join(module_path, 'description', fname + '.rst'),
-                  'rb') as rst_file:
+        with open(os.path.join(module_path, 'description', fname + '.rst'))\
+                as rst_file:
             descr = rst_file.read()
     except IOError:
         descr = ''

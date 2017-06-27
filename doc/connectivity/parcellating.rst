@@ -108,13 +108,6 @@ used for caching.
     The Ward clustering computing 1000 parcels runs typically in about 10
     seconds. Admitedly, this is very fast.
 
-.. seealso::
-
-   * A function :func:`nilearn.regions.connected_label_regions` which can be useful to
-     break down connected components into regions. For instance, clusters defined using
-     KMeans whereas it is not necessary for Ward clustering due to its
-     spatial connectivity.
-
 
 Using and visualizing the resulting parcellation
 ==================================================

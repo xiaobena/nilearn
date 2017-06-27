@@ -14,7 +14,6 @@ import gc
 import numpy as np
 import scipy.signal
 from sklearn.utils import check_random_state
-from sklearn.utils.testing import assert_warns
 import scipy.linalg
 import nibabel
 
@@ -28,7 +27,37 @@ try:
     from nose.tools import assert_raises_regex
 except ImportError:
     # For Py 2.7
-    from nose.tools import assert_raises_regexp as assert_raises_regex
+    try:
+        from nose.tools import assert_raises_regexp as assert_raises_regex
+    except ImportError:
+        # for Py 2.6
+        def assert_raises_regex(expected_exception, expected_regexp,
+                                callable_obj=None, *args, **kwargs):
+            """Helper function to check for message patterns in exceptions"""
+
+            not_raised = False
+            try:
+                callable_obj(*args, **kwargs)
+                not_raised = True
+            except Exception as e:
+                error_message = str(e)
+                if not re.compile(expected_regexp).search(error_message):
+                    raise AssertionError("Error message should match pattern "
+                                         "%r. %r does not." %
+                                         (expected_regexp, error_message))
+            if not_raised:
+                raise AssertionError("Should have raised %r" %
+                                     expected_exception(expected_regexp))
+
+try:
+    from sklearn.utils.testing import assert_warns
+except ImportError:
+    # sklearn.utils.testing.assert_warns new in scikit-learn 0.14
+    def assert_warns(warning_class, func, *args, **kw):
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("ignore", warning_class)
+            output = func(*args, **kw)
+        return output
 
 
 # we use memory_profiler library for memory consumption checks
@@ -164,7 +193,6 @@ def write_tmp_imgs(*imgs, **kwargs):
                                                dir=None)
                     filenames.append(filename)
                     img.to_filename(filename)
-                    del img
 
                 if use_wildcards:
                     yield prefix + "*" + suffix
@@ -232,7 +260,7 @@ class FetchFilesMock (object):
 
     def add_csv(self, filename, content):
         self.csv_files[filename] = content
-
+    
     def __call__(self, *args, **kwargs):
         """Load requested dataset, downloading it if needed or requested.
 
