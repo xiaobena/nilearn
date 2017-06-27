@@ -25,7 +25,7 @@ dependencies:
             DISTRIB: "conda"
             PYTHON_VERSION: "3.5"
             NUMPY_VERSION: "*"
-            SCIPY_VERSION: "*"
+            SCIPY_VERSION: "0.18.0"
             SCIKIT_LEARN_VERSION: "*"
             MATPLOTLIB_VERSION: "*"
     - conda install sphinx coverage pillow -y -n testenv
